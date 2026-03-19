@@ -2,9 +2,7 @@
   "_versions": {
     "chat-consulta": 6,
     "sync-sharepoint": 9,
-    "generate-report": 1
-  }
-}
-functions": 1
+    "generate-report": 1,
+    "functions": 1
   }
 }
