@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Filter, PlusCircle, ShieldAlert, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -130,7 +130,8 @@ export default function Funcionarios() {
   const filteredEmployees = employees.filter((emp) => {
     const matchesSearch = emp.name.toLowerCase().includes(search.toLowerCase())
     const matchesDept = deptFilter === 'Todos' || emp.departmentId === deptFilter
-    return matchesSearch && matchesDept
+    const isAtivo = emp.status === 'Ativo'
+    return matchesSearch && matchesDept && isAtivo
   })
 
   const handleCreate = () => {
@@ -198,10 +199,10 @@ export default function Funcionarios() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-light uppercase tracking-widest text-foreground">
-            Quadro de Funcionários
+            Funcionários Ativos
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie os registros de todos os colaboradores.
+            Gerencie os registros do quadro atual de colaboradores ativos.
           </p>
         </div>
         <Button onClick={handleCreate} className="uppercase tracking-widest text-xs">

@@ -15,6 +15,7 @@ import Relatorios from './pages/Relatorios'
 import Cargos from './pages/Cargos'
 import Configuracoes from './pages/Configuracoes'
 import Login from './pages/Login'
+import Recrutamento from './pages/Recrutamento'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 import { ThemeProvider } from './components/theme-provider'
 
@@ -50,10 +51,11 @@ const App = () => (
               <Route element={<Layout />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/funcionarios" element={<Funcionarios />} />
+                <Route path="/recrutamento" element={<Recrutamento />} />
                 <Route path="/ferias" element={<Ferias />} />
                 <Route path="/folha-pagamento" element={<FolhaPagamento />} />
                 <Route path="/avaliacoes" element={<Avaliacoes />} />
-                <Route path="/controle-ponto" element={<Ponto />} />
+                <Route path="/ponto" element={<Ponto />} />
                 <Route path="/relatorios" element={<Relatorios />} />
                 <Route path="/cargos" element={<Cargos />} />
                 <Route path="/configuracoes" element={<Configuracoes />} />
