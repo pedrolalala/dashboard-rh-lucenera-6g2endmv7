@@ -1,0 +1,813 @@
+// AVOID UPDATING THIS FILE DIRECTLY. It is automatically generated.
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
+  public: {
+    Tables: {
+      entregas_finalizadas: {
+        Row: {
+          cliente: string | null
+          codigo_obra: number | null
+          created_at: string | null
+          data_entrega_real: string | null
+          data_solicitacao: string | null
+          endereco: string | null
+          fotos_urls: Json | null
+          gestora_equipe: string | null
+          id: string | null
+          material_conteudo: string | null
+          material_tipo: string | null
+          numero_entrega: string | null
+          numero_pedido: string | null
+          observacoes: string | null
+          observacoes_internas: string | null
+          recebido_por: string | null
+          separacao_id: string | null
+          telefone: string | null
+          vendedor: string | null
+        }
+        Insert: {
+          cliente?: string | null
+          codigo_obra?: number | null
+          created_at?: string | null
+          data_entrega_real?: string | null
+          data_solicitacao?: string | null
+          endereco?: string | null
+          fotos_urls?: Json | null
+          gestora_equipe?: string | null
+          id?: string | null
+          material_conteudo?: string | null
+          material_tipo?: string | null
+          numero_entrega?: string | null
+          numero_pedido?: string | null
+          observacoes?: string | null
+          observacoes_internas?: string | null
+          recebido_por?: string | null
+          separacao_id?: string | null
+          telefone?: string | null
+          vendedor?: string | null
+        }
+        Update: {
+          cliente?: string | null
+          codigo_obra?: number | null
+          created_at?: string | null
+          data_entrega_real?: string | null
+          data_solicitacao?: string | null
+          endereco?: string | null
+          fotos_urls?: Json | null
+          gestora_equipe?: string | null
+          id?: string | null
+          material_conteudo?: string | null
+          material_tipo?: string | null
+          numero_entrega?: string | null
+          numero_pedido?: string | null
+          observacoes?: string | null
+          observacoes_internas?: string | null
+          recebido_por?: string | null
+          separacao_id?: string | null
+          telefone?: string | null
+          vendedor?: string | null
+        }
+        Relationships: []
+      }
+      entregas_pendentes: {
+        Row: {
+          cliente: string | null
+          codigo_obra: string | null
+          created_at: string | null
+          data_registro: string | null
+          descricao_problema: string | null
+          endereco: string | null
+          fotos_resolucao: string | null
+          fotos_urls: string | null
+          id: string | null
+          observacoes_resolucao: string | null
+          registrado_por: string | null
+          registrado_por_user_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resolved_by_user_id: string | null
+          responsavel: string | null
+          separacao_id: string | null
+          status_pendencia: string | null
+          telefone: string | null
+          tipo_problema: string | null
+        }
+        Insert: {
+          cliente?: string | null
+          codigo_obra?: string | null
+          created_at?: string | null
+          data_registro?: string | null
+          descricao_problema?: string | null
+          endereco?: string | null
+          fotos_resolucao?: string | null
+          fotos_urls?: string | null
+          id?: string | null
+          observacoes_resolucao?: string | null
+          registrado_por?: string | null
+          registrado_por_user_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_user_id?: string | null
+          responsavel?: string | null
+          separacao_id?: string | null
+          status_pendencia?: string | null
+          telefone?: string | null
+          tipo_problema?: string | null
+        }
+        Update: {
+          cliente?: string | null
+          codigo_obra?: string | null
+          created_at?: string | null
+          data_registro?: string | null
+          descricao_problema?: string | null
+          endereco?: string | null
+          fotos_resolucao?: string | null
+          fotos_urls?: string | null
+          id?: string | null
+          observacoes_resolucao?: string | null
+          registrado_por?: string | null
+          registrado_por_user_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resolved_by_user_id?: string | null
+          responsavel?: string | null
+          separacao_id?: string | null
+          status_pendencia?: string | null
+          telefone?: string | null
+          tipo_problema?: string | null
+        }
+        Relationships: []
+      }
+      projetos: {
+        Row: {
+          arquiteto_responsavel: string | null
+          cidade: string | null
+          codigo: string | null
+          created_at: string
+          data_entrada: string | null
+          estado: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          prazo: string | null
+          responsavel: string
+          responsavel_obra: string | null
+          status: string
+          valor: number
+        }
+        Insert: {
+          arquiteto_responsavel?: string | null
+          cidade?: string | null
+          codigo?: string | null
+          created_at?: string
+          data_entrada?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          prazo?: string | null
+          responsavel: string
+          responsavel_obra?: string | null
+          status: string
+          valor: number
+        }
+        Update: {
+          arquiteto_responsavel?: string | null
+          cidade?: string | null
+          codigo?: string | null
+          created_at?: string
+          data_entrada?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          prazo?: string | null
+          responsavel?: string
+          responsavel_obra?: string | null
+          status?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      separacao_arquivos: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          nome_arquivo: string | null
+          ordem: number | null
+          separacao_id: string | null
+          tamanho_bytes: number | null
+          tipo_arquivo: string | null
+          url_arquivo: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          nome_arquivo?: string | null
+          ordem?: number | null
+          separacao_id?: string | null
+          tamanho_bytes?: number | null
+          tipo_arquivo?: string | null
+          url_arquivo?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          nome_arquivo?: string | null
+          ordem?: number | null
+          separacao_id?: string | null
+          tamanho_bytes?: number | null
+          tipo_arquivo?: string | null
+          url_arquivo?: string | null
+        }
+        Relationships: []
+      }
+      separacao_itens: {
+        Row: {
+          codigo_produto: string | null
+          created_at: string | null
+          descricao: string | null
+          id: string | null
+          id_lote: string | null
+          local: number | null
+          marca: string | null
+          ordem: number | null
+          quantidade: number | null
+          referencia: string | null
+          separacao_id: string | null
+        }
+        Insert: {
+          codigo_produto?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string | null
+          id_lote?: string | null
+          local?: number | null
+          marca?: string | null
+          ordem?: number | null
+          quantidade?: number | null
+          referencia?: string | null
+          separacao_id?: string | null
+        }
+        Update: {
+          codigo_produto?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string | null
+          id_lote?: string | null
+          local?: number | null
+          marca?: string | null
+          ordem?: number | null
+          quantidade?: number | null
+          referencia?: string | null
+          separacao_id?: string | null
+        }
+        Relationships: []
+      }
+      separacoes: {
+        Row: {
+          cliente: string | null
+          codigo_obra: number | null
+          codigo_rastreamento: string | null
+          created_at: string | null
+          data_entrega: string | null
+          data_inicio_separacao: string | null
+          delivery_type: string | null
+          endereco: string | null
+          garantia_detalhes: string | null
+          garantia_motivo: string | null
+          garantia_peca: string | null
+          gestora_equipe: string | null
+          id: string | null
+          inclui_garantia: boolean | null
+          material_conteudo: string | null
+          material_tipo: string | null
+          nivel_complexidade: string | null
+          numero_entrega: string | null
+          numero_venda: Json | null
+          observacoes_internas: string | null
+          order_in_route: string | null
+          responsavel_recebimento: string | null
+          scheduled_time: string | null
+          separacoes_parciais: Json | null
+          solicitante: string | null
+          status: string | null
+          telefone: string | null
+          tipo_entrega: string | null
+          tipo_pedido: string | null
+          transportadora_nome: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cliente?: string | null
+          codigo_obra?: number | null
+          codigo_rastreamento?: string | null
+          created_at?: string | null
+          data_entrega?: string | null
+          data_inicio_separacao?: string | null
+          delivery_type?: string | null
+          endereco?: string | null
+          garantia_detalhes?: string | null
+          garantia_motivo?: string | null
+          garantia_peca?: string | null
+          gestora_equipe?: string | null
+          id?: string | null
+          inclui_garantia?: boolean | null
+          material_conteudo?: string | null
+          material_tipo?: string | null
+          nivel_complexidade?: string | null
+          numero_entrega?: string | null
+          numero_venda?: Json | null
+          observacoes_internas?: string | null
+          order_in_route?: string | null
+          responsavel_recebimento?: string | null
+          scheduled_time?: string | null
+          separacoes_parciais?: Json | null
+          solicitante?: string | null
+          status?: string | null
+          telefone?: string | null
+          tipo_entrega?: string | null
+          tipo_pedido?: string | null
+          transportadora_nome?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cliente?: string | null
+          codigo_obra?: number | null
+          codigo_rastreamento?: string | null
+          created_at?: string | null
+          data_entrega?: string | null
+          data_inicio_separacao?: string | null
+          delivery_type?: string | null
+          endereco?: string | null
+          garantia_detalhes?: string | null
+          garantia_motivo?: string | null
+          garantia_peca?: string | null
+          gestora_equipe?: string | null
+          id?: string | null
+          inclui_garantia?: boolean | null
+          material_conteudo?: string | null
+          material_tipo?: string | null
+          nivel_complexidade?: string | null
+          numero_entrega?: string | null
+          numero_venda?: Json | null
+          observacoes_internas?: string | null
+          order_in_route?: string | null
+          responsavel_recebimento?: string | null
+          scheduled_time?: string | null
+          separacoes_parciais?: Json | null
+          solicitante?: string | null
+          status?: string | null
+          telefone?: string | null
+          tipo_entrega?: string | null
+          tipo_pedido?: string | null
+          transportadora_nome?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tabela_precos: {
+        Row: {
+          categoria: string
+          created_at: string
+          id: string
+          observacao: string | null
+          preco: number
+          servico: string
+          vigencia: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          preco: number
+          servico: string
+          vigencia: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          preco?: number
+          servico?: string
+          vigencia?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string | null
+          nome_completo: string | null
+          role: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          nome_completo?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          nome_completo?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      usuarios: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          nome: string
+          role: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          role?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
+
+
+// ====== DATABASE EXTENDED CONTEXT (auto-generated) ======
+// This section contains actual PostgreSQL column types, constraints, RLS policies,
+// functions, triggers, indexes and materialized views not present in the type definitions above.
+// IMPORTANT: The TypeScript types above map UUID, TEXT, VARCHAR all to "string".
+// Use the COLUMN TYPES section below to know the real PostgreSQL type for each column.
+// Always use the correct PostgreSQL type when writing SQL migrations.
+
+// --- COLUMN TYPES (actual PostgreSQL types) ---
+// Use this to know the real database type when writing migrations.
+// "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: entregas_finalizadas
+//   id: text (nullable)
+//   separacao_id: text (nullable)
+//   cliente: text (nullable)
+//   codigo_obra: bigint (nullable)
+//   data_entrega_real: timestamp with time zone (nullable)
+//   endereco: text (nullable)
+//   recebido_por: text (nullable)
+//   telefone: text (nullable)
+//   material_tipo: text (nullable)
+//   material_conteudo: text (nullable)
+//   fotos_urls: jsonb (nullable)
+//   observacoes: text (nullable)
+//   created_at: timestamp with time zone (nullable)
+//   numero_pedido: text (nullable)
+//   vendedor: text (nullable)
+//   observacoes_internas: text (nullable)
+//   gestora_equipe: text (nullable)
+//   numero_entrega: text (nullable)
+//   data_solicitacao: timestamp with time zone (nullable)
+// Table: entregas_pendentes
+//   id: text (nullable)
+//   separacao_id: text (nullable)
+//   codigo_obra: text (nullable)
+//   cliente: text (nullable)
+//   endereco: text (nullable)
+//   responsavel: text (nullable)
+//   telefone: text (nullable)
+//   tipo_problema: text (nullable)
+//   descricao_problema: text (nullable)
+//   fotos_urls: text (nullable)
+//   registrado_por: text (nullable)
+//   registrado_por_user_id: text (nullable)
+//   data_registro: text (nullable)
+//   status_pendencia: text (nullable)
+//   resolved_at: text (nullable)
+//   resolved_by: text (nullable)
+//   created_at: text (nullable)
+//   fotos_resolucao: text (nullable)
+//   observacoes_resolucao: text (nullable)
+//   resolved_by_user_id: text (nullable)
+// Table: projetos
+//   id: uuid (not null, default: gen_random_uuid())
+//   nome: text (not null)
+//   responsavel: text (not null)
+//   status: text (not null)
+//   prazo: timestamp with time zone (nullable)
+//   valor: numeric (not null)
+//   observacoes: text (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
+//   codigo: text (nullable)
+//   arquiteto_responsavel: text (nullable)
+//   responsavel_obra: text (nullable)
+//   cidade: text (nullable)
+//   estado: text (nullable)
+//   data_entrada: timestamp with time zone (nullable)
+// Table: separacao_arquivos
+//   id: text (nullable)
+//   separacao_id: text (nullable)
+//   nome_arquivo: text (nullable)
+//   tipo_arquivo: text (nullable)
+//   url_arquivo: text (nullable)
+//   tamanho_bytes: bigint (nullable)
+//   ordem: bigint (nullable)
+//   created_at: timestamp with time zone (nullable)
+// Table: separacao_itens
+//   id: text (nullable)
+//   separacao_id: text (nullable)
+//   ordem: bigint (nullable)
+//   id_lote: text (nullable)
+//   codigo_produto: text (nullable)
+//   referencia: text (nullable)
+//   descricao: text (nullable)
+//   quantidade: double precision (nullable)
+//   created_at: timestamp with time zone (nullable)
+//   local: bigint (nullable)
+//   marca: text (nullable)
+// Table: separacoes
+//   id: text (nullable)
+//   cliente: text (nullable)
+//   codigo_obra: bigint (nullable)
+//   data_entrega: text (nullable)
+//   responsavel_recebimento: text (nullable)
+//   telefone: text (nullable)
+//   endereco: text (nullable)
+//   status: text (nullable)
+//   material_tipo: text (nullable)
+//   material_conteudo: text (nullable)
+//   created_at: timestamp with time zone (nullable)
+//   updated_at: timestamp with time zone (nullable)
+//   solicitante: text (nullable)
+//   delivery_type: text (nullable)
+//   scheduled_time: text (nullable)
+//   order_in_route: text (nullable)
+//   observacoes_internas: text (nullable)
+//   gestora_equipe: text (nullable)
+//   separacoes_parciais: jsonb (nullable)
+//   nivel_complexidade: text (nullable)
+//   tipo_entrega: text (nullable)
+//   transportadora_nome: text (nullable)
+//   codigo_rastreamento: text (nullable)
+//   numero_venda: jsonb (nullable)
+//   numero_entrega: text (nullable)
+//   data_inicio_separacao: text (nullable)
+//   tipo_pedido: text (nullable)
+//   garantia_detalhes: text (nullable)
+//   inclui_garantia: boolean (nullable)
+//   garantia_peca: text (nullable)
+//   garantia_motivo: text (nullable)
+// Table: tabela_precos
+//   id: uuid (not null, default: gen_random_uuid())
+//   servico: text (not null)
+//   categoria: text (not null)
+//   preco: numeric (not null)
+//   vigencia: text (not null)
+//   observacao: text (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
+// Table: user_roles
+//   id: text (nullable)
+//   user_id: text (nullable)
+//   email: text (nullable)
+//   role: text (nullable)
+//   nome_completo: text (nullable)
+//   created_at: timestamp with time zone (nullable)
+//   updated_at: timestamp with time zone (nullable)
+// Table: usuarios
+//   id: uuid (not null)
+//   email: text (not null)
+//   nome: text (not null)
+//   role: text (not null)
+//   created_at: timestamp with time zone (not null, default: now())
+
+// --- CONSTRAINTS ---
+// Table: projetos
+//   PRIMARY KEY projetos_pkey: PRIMARY KEY (id)
+// Table: tabela_precos
+//   PRIMARY KEY tabela_precos_pkey: PRIMARY KEY (id)
+// Table: usuarios
+//   FOREIGN KEY usuarios_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+//   PRIMARY KEY usuarios_pkey: PRIMARY KEY (id)
+//   CHECK usuarios_role_check: CHECK ((role = ANY (ARRAY['admin'::text, 'viewer'::text])))
+
+// --- ROW LEVEL SECURITY POLICIES ---
+// Table: projetos
+//   Policy "authenticated_delete_projetos" (DELETE, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "authenticated_insert_projetos" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: true
+//   Policy "authenticated_select_projetos" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "authenticated_update_projetos" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: tabela_precos
+//   Policy "authenticated_delete_precos" (DELETE, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "authenticated_insert_precos" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: true
+//   Policy "authenticated_select_precos" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+//   Policy "authenticated_update_precos" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: true
+//     WITH CHECK: true
+// Table: usuarios
+//   Policy "Users can select own profile" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: (id = auth.uid())
+
+// --- WARNING: TABLES WITH RLS ENABLED BUT NO POLICIES ---
+// These tables have Row Level Security enabled but NO policies defined.
+// This means ALL queries (SELECT, INSERT, UPDATE, DELETE) will return ZERO rows
+// for non-superuser roles (including the anon and authenticated roles used by the app).
+// You MUST create RLS policies for these tables to allow data access.
+//   - entregas_finalizadas
+//   - entregas_pendentes
+//   - separacao_arquivos
+//   - separacao_itens
+//   - separacoes
+//   - user_roles
+
+// --- DATABASE FUNCTIONS ---
+// FUNCTION handle_new_user()
+//   CREATE OR REPLACE FUNCTION public.handle_new_user()
+//    RETURNS trigger
+//    LANGUAGE plpgsql
+//    SECURITY DEFINER
+//   AS $function$
+//   BEGIN
+//     INSERT INTO public.usuarios (id, email, nome, role)
+//     VALUES (
+//       NEW.id,
+//       NEW.email,
+//       COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+//       'viewer'
+//     );
+//     RETURN NEW;
+//   END;
+//   $function$
+//   
+
