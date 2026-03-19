@@ -22,12 +22,12 @@ import {
 } from '@/components/ui/form'
 
 const schema = z.object({
-  name: z.string().min(2, 'Nome muito curto'),
-  email: z.string().email('E-mail inválido'),
+  name: z.string().min(2, 'Nome muito curto. Insira o nome completo.'),
+  email: z.string().email('E-mail inválido. Insira um e-mail válido.'),
   phone: z.string().optional(),
   cpf: z.string().optional(),
   admissionDate: z.string().optional(),
-  department: z.string().min(1, 'Selecione um departamento'),
+  departmentId: z.string().min(1, 'Selecione um departamento.'),
   role: z.string().optional(),
   salary: z.coerce.number().optional(),
   status: z.enum(['Ativo', 'Inativo']),
@@ -43,17 +43,29 @@ interface EmployeeFormProps {
 export function EmployeeForm({ employee, departments, onSubmit, onCancel }: EmployeeFormProps) {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: employee || {
-      name: '',
-      email: '',
-      phone: '',
-      cpf: '',
-      admissionDate: '',
-      department: '',
-      role: '',
-      salary: 0,
-      status: 'Ativo',
-    },
+    defaultValues: employee
+      ? {
+          name: employee.name,
+          email: employee.email,
+          phone: employee.phone,
+          cpf: employee.cpf,
+          admissionDate: employee.admissionDate,
+          departmentId: employee.departmentId,
+          role: employee.role,
+          salary: employee.salary,
+          status: employee.status,
+        }
+      : {
+          name: '',
+          email: '',
+          phone: '',
+          cpf: '',
+          admissionDate: '',
+          departmentId: '',
+          role: '',
+          salary: 0,
+          status: 'Ativo',
+        },
   })
 
   const Field = ({ name, label, type = 'text', placeholder = '' }: any) => (
@@ -75,18 +87,18 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <Field name="name" label="Nome Completo" placeholder="Ex: João da Silva" />
+        <Field name="name" label="Nome Completo *" placeholder="Ex: João da Silva" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field name="email" label="E-mail" type="email" placeholder="joao@lucenera.com" />
+          <Field name="email" label="E-mail *" type="email" placeholder="joao@lucenera.com" />
           <Field name="phone" label="Telefone" placeholder="(11) 99999-9999" />
           <Field name="cpf" label="CPF" placeholder="000.000.000-00" />
           <Field name="admissionDate" label="Data de Admissão" type="date" />
           <FormField
             control={form.control}
-            name="department"
+            name="departmentId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Departamento</FormLabel>
+                <FormLabel>Departamento *</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -95,7 +107,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
                   </FormControl>
                   <SelectContent>
                     {departments.map((d) => (
-                      <SelectItem key={d.id} value={d.nome}>
+                      <SelectItem key={d.id} value={d.id}>
                         {d.nome}
                       </SelectItem>
                     ))}
@@ -112,9 +124,12 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           control={form.control}
           name="status"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-slate-50/50">
               <div className="space-y-0.5">
                 <FormLabel>Status Ativo</FormLabel>
+                <p className="text-xs text-muted-foreground">
+                  Desative para suspender o acesso do colaborador.
+                </p>
               </div>
               <FormControl>
                 <Switch
@@ -130,7 +145,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
             Cancelar
           </Button>
           <Button type="submit" className="bg-secondary text-secondary-foreground">
-            Salvar Colaborador
+            {employee ? 'Salvar Alterações' : 'Criar Colaborador'}
           </Button>
         </div>
       </form>

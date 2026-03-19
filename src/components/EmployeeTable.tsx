@@ -16,10 +16,9 @@ interface EmployeeTableProps {
   data: Employee[]
   onEdit: (employee: Employee) => void
   onDelete: (id: string) => void
-  canEdit?: boolean
 }
 
-export function EmployeeTable({ data, onEdit, onDelete, canEdit }: EmployeeTableProps) {
+export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
   return (
     <Table>
       <TableHeader className="bg-slate-50/50">
@@ -29,13 +28,13 @@ export function EmployeeTable({ data, onEdit, onDelete, canEdit }: EmployeeTable
           <TableHead>Departamento</TableHead>
           <TableHead>Cargo</TableHead>
           <TableHead>Status</TableHead>
-          {canEdit && <TableHead className="text-right">Ações</TableHead>}
+          <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.length === 0 && (
           <TableRow>
-            <TableCell colSpan={canEdit ? 6 : 5} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
               Nenhum colaborador encontrado.
             </TableCell>
           </TableRow>
@@ -54,11 +53,11 @@ export function EmployeeTable({ data, onEdit, onDelete, canEdit }: EmployeeTable
             <TableCell>
               <div className="flex flex-col">
                 <span className="text-sm">{emp.email}</span>
-                <span className="text-xs text-muted-foreground">{emp.phone}</span>
+                <span className="text-xs text-muted-foreground">{emp.phone || '-'}</span>
               </div>
             </TableCell>
-            <TableCell>{emp.department}</TableCell>
-            <TableCell>{emp.role}</TableCell>
+            <TableCell>{emp.departmentName}</TableCell>
+            <TableCell>{emp.role || '-'}</TableCell>
             <TableCell>
               <Badge
                 variant={emp.status === 'Ativo' ? 'default' : 'secondary'}
@@ -71,23 +70,21 @@ export function EmployeeTable({ data, onEdit, onDelete, canEdit }: EmployeeTable
                 {emp.status}
               </Badge>
             </TableCell>
-            {canEdit && (
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(emp)} title="Editar">
-                    <Edit2 className="h-4 w-4 text-secondary" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onDelete(emp.id)}
-                    title="Excluir"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </TableCell>
-            )}
+            <TableCell className="text-right">
+              <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="icon" onClick={() => onEdit(emp)} title="Editar">
+                  <Edit2 className="h-4 w-4 text-secondary" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(emp.id)}
+                  title="Excluir"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

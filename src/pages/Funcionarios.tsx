@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Search, Filter, PlusCircle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Search, Filter, PlusCircle, ShieldAlert, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -36,7 +37,8 @@ import { useToast } from '@/hooks/use-toast'
 export type Employee = {
   id: string
   name: string
-  department: string
+  departmentId: string
+  departmentName: string
   role: string
   status: 'Ativo' | 'Inativo'
   email: string
@@ -51,6 +53,7 @@ export default function Funcionarios() {
   const [departments, setDepartments] = useState<{ id: string; nome: string }[]>([])
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('Todos')
+  const [isLoading, setIsLoading] = useState(true)
 
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [editingEmp, setEditingEmp] = useState<Employee | undefined>()
@@ -58,8 +61,10 @@ export default function Funcionarios() {
 
   const { user } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
 
   const fetchEmployees = async () => {
+    setIsLoading(true)
     const { data } = await supabase.from('funcionarios_rh').select('*, departamentos_rh(nome)')
     if (data) {
       setEmployees(
@@ -72,32 +77,59 @@ export default function Funcionarios() {
           admissionDate: d.data_admissao
             ? new Date(d.data_admissao).toISOString().split('T')[0]
             : '',
-          department: (d.departamentos_rh as any)?.nome || '',
+          departmentId: d.departamento_id || '',
+          departmentName: (d.departamentos_rh as any)?.nome || 'Sem Departamento',
           role: d.cargo || '',
           salary: Number(d.salario_base) || 0,
           status: (d.status as 'Ativo' | 'Inativo') || 'Ativo',
         })),
       )
     }
+    setIsLoading(false)
   }
 
   useEffect(() => {
-    fetchEmployees()
-    supabase
-      .from('departamentos_rh')
-      .select('*')
-      .then(({ data }) => {
-        if (data) setDepartments(data)
-      })
-  }, [])
+    if (user && user.app_role === 'admin') {
+      fetchEmployees()
+      supabase
+        .from('departamentos_rh')
+        .select('*')
+        .then(({ data }) => {
+          if (data) setDepartments(data)
+        })
+    }
+  }, [user])
 
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((emp) => {
-      const matchesSearch = emp.name.toLowerCase().includes(search.toLowerCase())
-      const matchesDept = deptFilter === 'Todos' || emp.department === deptFilter
-      return matchesSearch && matchesDept
-    })
-  }, [search, deptFilter, employees])
+  // Admin-only access control
+  if (user && !user.app_role) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (user && user.app_role !== 'admin') {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center space-y-4 animate-fade-in-up">
+        <ShieldAlert className="h-16 w-16 text-destructive" />
+        <h2 className="text-2xl font-bold">Acesso Negado</h2>
+        <p className="text-muted-foreground max-w-md text-center">
+          Apenas usuários com perfil de administrador têm permissão para acessar e gerenciar o
+          quadro de funcionários.
+        </p>
+        <Button onClick={() => navigate('/')} className="mt-4">
+          Voltar para o Início
+        </Button>
+      </div>
+    )
+  }
+
+  const filteredEmployees = employees.filter((emp) => {
+    const matchesSearch = emp.name.toLowerCase().includes(search.toLowerCase())
+    const matchesDept = deptFilter === 'Todos' || emp.departmentId === deptFilter
+    return matchesSearch && matchesDept
+  })
 
   const handleCreate = () => {
     setEditingEmp(undefined)
@@ -110,14 +142,13 @@ export default function Funcionarios() {
   }
 
   const handleSave = async (data: any) => {
-    const dept = departments.find((d) => d.nome === data.department)
     const payload = {
       nome: data.name,
       email: data.email,
       telefone: data.phone,
       cpf: data.cpf,
       data_admissao: data.admissionDate ? new Date(data.admissionDate).toISOString() : null,
-      departamento_id: dept?.id,
+      departamento_id: data.departmentId,
       cargo: data.role,
       salario_base: data.salary,
       status: data.status,
@@ -132,6 +163,8 @@ export default function Funcionarios() {
         toast({ title: 'Funcionário atualizado com sucesso!' })
         fetchEmployees()
         setIsSheetOpen(false)
+      } else {
+        toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' })
       }
     } else {
       const { error } = await supabase.from('funcionarios_rh').insert(payload)
@@ -139,6 +172,8 @@ export default function Funcionarios() {
         toast({ title: 'Funcionário criado com sucesso!' })
         fetchEmployees()
         setIsSheetOpen(false)
+      } else {
+        toast({ title: 'Erro ao criar', description: error.message, variant: 'destructive' })
       }
     }
   }
@@ -149,12 +184,12 @@ export default function Funcionarios() {
       if (!error) {
         toast({ title: 'Funcionário excluído.' })
         fetchEmployees()
+      } else {
+        toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' })
       }
       setDeleteId(null)
     }
   }
-
-  const canEdit = user?.app_role === 'admin' || user?.app_role === 'gerente'
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -165,14 +200,12 @@ export default function Funcionarios() {
             Gerencie os registros de todos os colaboradores da empresa.
           </p>
         </div>
-        {canEdit && (
-          <Button
-            onClick={handleCreate}
-            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Colaborador
-          </Button>
-        )}
+        <Button
+          onClick={handleCreate}
+          className="bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm"
+        >
+          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Colaborador
+        </Button>
       </div>
 
       <Card className="shadow-sm border-blue-100/50">
@@ -190,13 +223,13 @@ export default function Funcionarios() {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={deptFilter} onValueChange={setDeptFilter}>
-                <SelectTrigger className="w-[180px] bg-white">
+                <SelectTrigger className="w-[200px] bg-white">
                   <SelectValue placeholder="Departamento" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Todos">Todos os Departamentos</SelectItem>
                   {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.nome}>
+                    <SelectItem key={d.id} value={d.id}>
                       {d.nome}
                     </SelectItem>
                   ))}
@@ -205,12 +238,13 @@ export default function Funcionarios() {
             </div>
           </div>
 
-          <EmployeeTable
-            data={filteredEmployees}
-            onEdit={handleEdit}
-            onDelete={setDeleteId}
-            canEdit={canEdit}
-          />
+          {isLoading ? (
+            <div className="p-8 text-center">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+            </div>
+          ) : (
+            <EmployeeTable data={filteredEmployees} onEdit={handleEdit} onDelete={setDeleteId} />
+          )}
         </CardContent>
       </Card>
 
