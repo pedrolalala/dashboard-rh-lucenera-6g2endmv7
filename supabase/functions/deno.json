@@ -1,5 +1,4 @@
 {
-  "workspace": ["chat-consulta", "generate-report", "sync-sharepoint", "sync-teams"],
   "_versions": {
     "chat-consulta": 6,
     "sync-sharepoint": 9,
