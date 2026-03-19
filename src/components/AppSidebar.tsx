@@ -17,7 +17,7 @@ const navItems = [
   { title: 'Férias', url: '/ferias', icon: CalendarDays },
   { title: 'Folha de Pagamento', url: '/folha-pagamento', icon: Wallet },
   { title: 'Avaliações', url: '/avaliacoes', icon: Star },
-  { title: 'Controle de Ponto', url: '/ponto', icon: Clock },
+  { title: 'Controle de Ponto', url: '/controle-ponto', icon: Clock },
 ]
 
 export function AppSidebar() {

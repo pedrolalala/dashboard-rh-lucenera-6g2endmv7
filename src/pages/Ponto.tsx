@@ -1,5 +1,9 @@
-import { Clock, AlertCircle } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect, useMemo } from 'react'
+import { format, subDays } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { Calendar as CalendarIcon, Clock, Filter, Loader2 } from 'lucide-react'
+import { DateRange } from 'react-day-picker'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Table,
@@ -9,75 +13,206 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
+import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
 
-const timeData = [
-  { name: 'Carlos Santos', date: 'Hoje', in: '08:55', out: '-', status: 'Regular' },
-  { name: 'Bruna Costa', date: 'Hoje', in: '09:15', out: '-', status: 'Atraso' },
-  { name: 'Diego Oliveira', date: 'Hoje', in: '08:45', out: '-', status: 'Regular' },
-  { name: 'Ana Silva', date: 'Ontem', in: '09:00', out: '19:30', status: 'Hora Extra' },
-  { name: 'Eduarda Lima', date: 'Ontem', in: '-', out: '-', status: 'Falta Injustificada' },
-]
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  presente: { label: 'Presente', color: 'bg-emerald-100 text-emerald-800 border-transparent' },
+  ausente: { label: 'Ausente', color: 'bg-red-100 text-red-800 border-transparent' },
+  atraso: { label: 'Atraso', color: 'bg-amber-100 text-amber-800 border-transparent' },
+}
 
 export default function Ponto() {
+  const [logs, setLogs] = useState<any[]>([])
+  const [departments, setDepartments] = useState<any[]>([])
+  const [selectedDept, setSelectedDept] = useState('Todos')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    supabase
+      .from('departamentos_rh')
+      .select('*')
+      .then(({ data }) => {
+        if (data) setDepartments(data)
+      })
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
+    const fetchLogs = async () => {
+      setIsLoading(true)
+      let query = supabase
+        .from('controle_ponto')
+        .select('*, funcionarios_rh!inner(nome, departamentos_rh(nome))')
+        .order('data', { ascending: false })
+
+      if (user?.app_role === 'funcionario' && user?.funcionario_id) {
+        query = query.eq('funcionario_id', user.funcionario_id)
+      }
+
+      if (dateRange?.from) query = query.gte('data', format(dateRange.from, 'yyyy-MM-dd'))
+      if (dateRange?.to) query = query.lte('data', format(dateRange.to, 'yyyy-MM-dd'))
+
+      const { data } = await query
+      if (data) setLogs(data)
+      setIsLoading(false)
+    }
+    fetchLogs()
+  }, [user, dateRange])
+
+  const filteredLogs = useMemo(() => {
+    return logs.filter((log) => {
+      const dept = log.funcionarios_rh?.departamentos_rh?.nome || ''
+      return selectedDept === 'Todos' || dept === selectedDept
+    })
+  }, [logs, selectedDept])
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold tracking-tight text-primary">Controle de Ponto</h1>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Controle de Ponto</h1>
+          <p className="text-muted-foreground mt-1">
+            Monitore a assiduidade e jornada de trabalho da equipe.
+          </p>
+        </div>
       </div>
 
-      <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800">
-        <AlertCircle className="h-4 w-4 stroke-red-600" />
-        <AlertTitle>Atenção</AlertTitle>
-        <AlertDescription>
-          Há 1 funcionário com falta injustificada registrada no dia anterior. Verifique os logs.
-        </AlertDescription>
-      </Alert>
-
       <Card className="shadow-sm border-blue-100/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-secondary" />
-            Registros Recentes
-          </CardTitle>
-          <CardDescription>Visão geral de entradas e saídas</CardDescription>
+        <CardHeader className="pb-3 border-b bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="h-5 w-5 text-secondary" /> Registros de Ponto
+            </CardTitle>
+            <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+              <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
+              <Select value={selectedDept} onValueChange={setSelectedDept}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-white">
+                  <SelectValue placeholder="Departamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Todos">Todos Deptos</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.nome}>
+                      {d.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full sm:w-[260px] justify-start text-left font-normal bg-white',
+                      !dateRange && 'text-muted-foreground',
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, 'dd/MM/yyyy')} -{' '}
+                          {format(dateRange.to, 'dd/MM/yyyy')}
+                        </>
+                      ) : (
+                        format(dateRange.from, 'dd/MM/yyyy')
+                      )
+                    ) : (
+                      <span>Selecione o período</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-slate-50/50">
                 <TableHead>Colaborador</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Entrada</TableHead>
                 <TableHead>Saída</TableHead>
+                <TableHead className="text-center">Total Horas</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {timeData.map((log, i) => (
-                <TableRow key={i}>
-                  <TableCell className="font-medium">{log.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{log.date}</TableCell>
-                  <TableCell>{log.in}</TableCell>
-                  <TableCell>{log.out}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={
-                        log.status === 'Regular'
-                          ? 'bg-slate-100 text-slate-700'
-                          : log.status === 'Atraso'
-                            ? 'bg-amber-100 text-amber-800 border-transparent'
-                            : log.status === 'Hora Extra'
-                              ? 'bg-blue-100 text-blue-800 border-transparent'
-                              : 'bg-red-100 text-red-800 border-transparent'
-                      }
-                    >
-                      {log.status}
-                    </Badge>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : filteredLogs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    Nenhum registro encontrado para os filtros selecionados.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredLogs.map((log) => {
+                  const status = STATUS_CONFIG[log.status] || {
+                    label: log.status,
+                    color: 'bg-gray-100 text-gray-800',
+                  }
+                  return (
+                    <TableRow key={log.id}>
+                      <TableCell className="font-medium">
+                        {log.funcionarios_rh?.nome || 'Desconhecido'}
+                        <div className="text-xs text-muted-foreground font-normal">
+                          {log.funcionarios_rh?.departamentos_rh?.nome}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(log.data + 'T12:00:00'), 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell>
+                        {log.hora_entrada ? log.hora_entrada.substring(0, 5) : '-'}
+                      </TableCell>
+                      <TableCell>{log.hora_saida ? log.hora_saida.substring(0, 5) : '-'}</TableCell>
+                      <TableCell className="text-center font-medium">
+                        {log.total_horas ? Number(log.total_horas).toFixed(2) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={status.color}>
+                          {status.label}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>

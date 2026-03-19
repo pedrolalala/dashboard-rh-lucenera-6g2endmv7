@@ -9,6 +9,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      avaliacoes: {
+        Row: {
+          avaliador_id: string
+          comentarios: string | null
+          data_avaliacao: string
+          funcionario_id: string
+          id: string
+          periodo_fim: string
+          periodo_inicio: string
+          pontualidade: number
+          produtividade: number
+          qualidade: number
+          trabalho_equipe: number
+        }
+        Insert: {
+          avaliador_id: string
+          comentarios?: string | null
+          data_avaliacao?: string
+          funcionario_id: string
+          id?: string
+          periodo_fim: string
+          periodo_inicio: string
+          pontualidade: number
+          produtividade: number
+          qualidade: number
+          trabalho_equipe: number
+        }
+        Update: {
+          avaliador_id?: string
+          comentarios?: string | null
+          data_avaliacao?: string
+          funcionario_id?: string
+          id?: string
+          periodo_fim?: string
+          periodo_inicio?: string
+          pontualidade?: number
+          produtividade?: number
+          qualidade?: number
+          trabalho_equipe?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'avaliacoes_avaliador_id_fkey'
+            columns: ['avaliador_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'avaliacoes_funcionario_id_fkey'
+            columns: ['funcionario_id']
+            isOneToOne: false
+            referencedRelation: 'funcionarios_rh'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       departamentos_rh: {
         Row: {
           id: string
@@ -753,6 +810,18 @@ export const Constants = {
 // --- COLUMN TYPES (actual PostgreSQL types) ---
 // Use this to know the real database type when writing migrations.
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: avaliacoes
+//   id: uuid (not null, default: gen_random_uuid())
+//   funcionario_id: uuid (not null)
+//   periodo_inicio: date (not null)
+//   periodo_fim: date (not null)
+//   produtividade: integer (not null)
+//   qualidade: integer (not null)
+//   pontualidade: integer (not null)
+//   trabalho_equipe: integer (not null)
+//   comentarios: text (nullable)
+//   data_avaliacao: timestamp with time zone (not null, default: now())
+//   avaliador_id: uuid (not null)
 // Table: departamentos_rh
 //   id: uuid (not null, default: gen_random_uuid())
 //   nome: text (not null)
@@ -920,6 +989,14 @@ export const Constants = {
 //   created_at: timestamp with time zone (not null, default: now())
 
 // --- CONSTRAINTS ---
+// Table: avaliacoes
+//   FOREIGN KEY avaliacoes_avaliador_id_fkey: FOREIGN KEY (avaliador_id) REFERENCES usuarios(id) ON DELETE CASCADE
+//   FOREIGN KEY avaliacoes_funcionario_id_fkey: FOREIGN KEY (funcionario_id) REFERENCES funcionarios_rh(id) ON DELETE CASCADE
+//   PRIMARY KEY avaliacoes_pkey: PRIMARY KEY (id)
+//   CHECK avaliacoes_pontualidade_check: CHECK (((pontualidade >= 1) AND (pontualidade <= 5)))
+//   CHECK avaliacoes_produtividade_check: CHECK (((produtividade >= 1) AND (produtividade <= 5)))
+//   CHECK avaliacoes_qualidade_check: CHECK (((qualidade >= 1) AND (qualidade <= 5)))
+//   CHECK avaliacoes_trabalho_equipe_check: CHECK (((trabalho_equipe >= 1) AND (trabalho_equipe <= 5)))
 // Table: departamentos_rh
 //   UNIQUE departamentos_rh_nome_key: UNIQUE (nome)
 //   PRIMARY KEY departamentos_rh_pkey: PRIMARY KEY (id)
@@ -944,6 +1021,11 @@ export const Constants = {
 //   CHECK usuarios_role_check: CHECK ((role = ANY (ARRAY['admin'::text, 'viewer'::text, 'gerente'::text, 'funcionario'::text])))
 
 // --- ROW LEVEL SECURITY POLICIES ---
+// Table: avaliacoes
+//   Policy "auth_all_admin_gerente_avaliacoes" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
+//   Policy "auth_select_func_avaliacoes" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid())))
 // Table: departamentos_rh
 //   Policy "dept_all_admin" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
