@@ -40,6 +40,22 @@ const ProtectedRoute = () => {
   return <Outlet />
 }
 
+const AdminGerenteRoute = () => {
+  const { user } = useAuth()
+  if (user?.app_role === 'funcionario') {
+    return <Navigate to="/ponto" replace />
+  }
+  return <Outlet />
+}
+
+const IndexRoute = () => {
+  const { user } = useAuth()
+  if (user?.app_role === 'funcionario') {
+    return <Navigate to="/ponto" replace />
+  }
+  return <Index />
+}
+
 const LoadingFallback = () => (
   <div className="h-[50vh] w-full flex items-center justify-center">
     <Loader2 className="animate-spin h-8 w-8 text-primary" />
@@ -63,16 +79,19 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/funcionarios" element={<Funcionarios />} />
-                  <Route path="/recrutamento" element={<Recrutamento />} />
+                  <Route path="/" element={<IndexRoute />} />
                   <Route path="/ferias" element={<Ferias />} />
-                  <Route path="/folha-pagamento" element={<FolhaPagamento />} />
-                  <Route path="/avaliacoes" element={<Avaliacoes />} />
                   <Route path="/ponto" element={<Ponto />} />
-                  <Route path="/relatorios" element={<Relatorios />} />
-                  <Route path="/cargos" element={<Cargos />} />
-                  <Route path="/configuracoes" element={<Configuracoes />} />
+
+                  <Route element={<AdminGerenteRoute />}>
+                    <Route path="/funcionarios" element={<Funcionarios />} />
+                    <Route path="/recrutamento" element={<Recrutamento />} />
+                    <Route path="/folha-pagamento" element={<FolhaPagamento />} />
+                    <Route path="/avaliacoes" element={<Avaliacoes />} />
+                    <Route path="/relatorios" element={<Relatorios />} />
+                    <Route path="/cargos" element={<Cargos />} />
+                    <Route path="/configuracoes" element={<Configuracoes />} />
+                  </Route>
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

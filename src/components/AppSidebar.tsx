@@ -45,6 +45,7 @@ export function AppSidebar() {
   const location = useLocation()
   const { signOut, user } = useAuth()
   const isAdmin = user?.app_role === 'admin'
+  const isFuncionario = user?.app_role === 'funcionario'
 
   const renderMenu = (items: any[]) => (
     <SidebarMenu>
@@ -67,7 +68,10 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-6 flex items-center justify-center border-b border-border/50">
-        <Link to="/" className="w-full flex justify-center hover:opacity-80 transition-opacity">
+        <Link
+          to={isFuncionario ? '/ponto' : '/'}
+          className="w-full flex justify-center hover:opacity-80 transition-opacity"
+        >
           <img
             src={logoImg}
             alt="Lucenera Logo"
@@ -77,12 +81,14 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 mt-4 px-4">
-            Gestão
-          </SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenu(navGestao)}</SidebarGroupContent>
-        </SidebarGroup>
+        {!isFuncionario && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 mt-4 px-4">
+              Gestão
+            </SidebarGroupLabel>
+            <SidebarGroupContent>{renderMenu(navGestao)}</SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 mt-2 px-4">
@@ -91,12 +97,14 @@ export function AppSidebar() {
           <SidebarGroupContent>{renderMenu(navOperacional)}</SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 mt-2 px-4">
-            Avaliações e Dashboard
-          </SidebarGroupLabel>
-          <SidebarGroupContent>{renderMenu(navResultados)}</SidebarGroupContent>
-        </SidebarGroup>
+        {!isFuncionario && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 mt-2 px-4">
+              Avaliações e Dashboard
+            </SidebarGroupLabel>
+            <SidebarGroupContent>{renderMenu(navResultados)}</SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-border/50 space-y-2">
