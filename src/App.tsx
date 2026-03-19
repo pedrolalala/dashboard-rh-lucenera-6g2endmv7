@@ -1,29 +1,36 @@
+import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import Layout from './components/Layout'
-import NotFound from './pages/NotFound'
-
-import Index from './pages/Index'
-import Funcionarios from './pages/Funcionarios'
-import Ferias from './pages/Ferias'
-import FolhaPagamento from './pages/Folha'
-import Avaliacoes from './pages/Avaliacoes'
-import Ponto from './pages/Ponto'
-import Relatorios from './pages/Relatorios'
-import Cargos from './pages/Cargos'
-import Configuracoes from './pages/Configuracoes'
-import Login from './pages/Login'
-import Recrutamento from './pages/Recrutamento'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 import { ThemeProvider } from './components/theme-provider'
+import { Loader2 } from 'lucide-react'
+
+// Implement code splitting for routes to prevent out-of-memory errors during build
+const Index = lazy(() => import('./pages/Index'))
+const Funcionarios = lazy(() => import('./pages/Funcionarios'))
+const Ferias = lazy(() => import('./pages/Ferias'))
+const FolhaPagamento = lazy(() => import('./pages/Folha'))
+const Avaliacoes = lazy(() => import('./pages/Avaliacoes'))
+const Ponto = lazy(() => import('./pages/Ponto'))
+const Relatorios = lazy(() => import('./pages/Relatorios'))
+const Cargos = lazy(() => import('./pages/Cargos'))
+const Configuracoes = lazy(() => import('./pages/Configuracoes'))
+const Login = lazy(() => import('./pages/Login'))
+const Recrutamento = lazy(() => import('./pages/Recrutamento'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 const ProtectedRoute = () => {
   const { user, loading } = useAuth()
 
   if (loading) {
-    return <div className="h-screen flex items-center justify-center">Carregando...</div>
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+      </div>
+    )
   }
 
   if (!user) {
@@ -32,6 +39,12 @@ const ProtectedRoute = () => {
 
   return <Outlet />
 }
+
+const LoadingFallback = () => (
+  <div className="h-[50vh] w-full flex items-center justify-center">
+    <Loader2 className="animate-spin h-8 w-8 text-primary" />
+  </div>
+)
 
 const App = () => (
   <ThemeProvider
@@ -45,24 +58,26 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route element={<ProtectedRoute />}>
-              <Route element={<Layout />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/funcionarios" element={<Funcionarios />} />
-                <Route path="/recrutamento" element={<Recrutamento />} />
-                <Route path="/ferias" element={<Ferias />} />
-                <Route path="/folha-pagamento" element={<FolhaPagamento />} />
-                <Route path="/avaliacoes" element={<Avaliacoes />} />
-                <Route path="/ponto" element={<Ponto />} />
-                <Route path="/relatorios" element={<Relatorios />} />
-                <Route path="/cargos" element={<Cargos />} />
-                <Route path="/configuracoes" element={<Configuracoes />} />
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/funcionarios" element={<Funcionarios />} />
+                  <Route path="/recrutamento" element={<Recrutamento />} />
+                  <Route path="/ferias" element={<Ferias />} />
+                  <Route path="/folha-pagamento" element={<FolhaPagamento />} />
+                  <Route path="/avaliacoes" element={<Avaliacoes />} />
+                  <Route path="/ponto" element={<Ponto />} />
+                  <Route path="/relatorios" element={<Relatorios />} />
+                  <Route path="/cargos" element={<Cargos />} />
+                  <Route path="/configuracoes" element={<Configuracoes />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </TooltipProvider>
       </BrowserRouter>
     </AuthProvider>
