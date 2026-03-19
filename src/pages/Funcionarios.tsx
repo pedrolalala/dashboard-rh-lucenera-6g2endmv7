@@ -1,6 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Search, Filter, PlusCircle } from 'lucide-react'
-import { employees as initialEmployees, type Employee } from '@/data/mock'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -30,15 +29,67 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
+import { useToast } from '@/hooks/use-toast'
+
+export type Employee = {
+  id: string
+  name: string
+  department: string
+  role: string
+  status: 'Ativo' | 'Inativo'
+  email: string
+  phone: string
+  cpf: string
+  admissionDate: string
+  salary: number
+}
 
 export default function Funcionarios() {
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [departments, setDepartments] = useState<{ id: string; nome: string }[]>([])
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('Todos')
 
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [editingEmp, setEditingEmp] = useState<Employee | undefined>()
   const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  const { user } = useAuth()
+  const { toast } = useToast()
+
+  const fetchEmployees = async () => {
+    const { data } = await supabase.from('funcionarios_rh').select('*, departamentos_rh(nome)')
+    if (data) {
+      setEmployees(
+        data.map((d) => ({
+          id: d.id,
+          name: d.nome,
+          email: d.email,
+          phone: d.telefone || '',
+          cpf: d.cpf || '',
+          admissionDate: d.data_admissao
+            ? new Date(d.data_admissao).toISOString().split('T')[0]
+            : '',
+          department: (d.departamentos_rh as any)?.nome || '',
+          role: d.cargo || '',
+          salary: Number(d.salario_base) || 0,
+          status: (d.status as 'Ativo' | 'Inativo') || 'Ativo',
+        })),
+      )
+    }
+  }
+
+  useEffect(() => {
+    fetchEmployees()
+    supabase
+      .from('departamentos_rh')
+      .select('*')
+      .then(({ data }) => {
+        if (data) setDepartments(data)
+      })
+  }, [])
 
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
@@ -58,23 +109,52 @@ export default function Funcionarios() {
     setIsSheetOpen(true)
   }
 
-  const handleSave = (data: Omit<Employee, 'id'>) => {
-    if (editingEmp) {
-      setEmployees(
-        employees.map((e) => (e.id === editingEmp.id ? ({ ...data, id: e.id } as Employee) : e)),
-      )
-    } else {
-      setEmployees([{ ...data, id: Date.now().toString() } as Employee, ...employees])
+  const handleSave = async (data: any) => {
+    const dept = departments.find((d) => d.nome === data.department)
+    const payload = {
+      nome: data.name,
+      email: data.email,
+      telefone: data.phone,
+      cpf: data.cpf,
+      data_admissao: data.admissionDate ? new Date(data.admissionDate).toISOString() : null,
+      departamento_id: dept?.id,
+      cargo: data.role,
+      salario_base: data.salary,
+      status: data.status,
     }
-    setIsSheetOpen(false)
+
+    if (editingEmp) {
+      const { error } = await supabase
+        .from('funcionarios_rh')
+        .update(payload)
+        .eq('id', editingEmp.id)
+      if (!error) {
+        toast({ title: 'Funcionário atualizado com sucesso!' })
+        fetchEmployees()
+        setIsSheetOpen(false)
+      }
+    } else {
+      const { error } = await supabase.from('funcionarios_rh').insert(payload)
+      if (!error) {
+        toast({ title: 'Funcionário criado com sucesso!' })
+        fetchEmployees()
+        setIsSheetOpen(false)
+      }
+    }
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteId) {
-      setEmployees(employees.filter((e) => e.id !== deleteId))
+      const { error } = await supabase.from('funcionarios_rh').delete().eq('id', deleteId)
+      if (!error) {
+        toast({ title: 'Funcionário excluído.' })
+        fetchEmployees()
+      }
       setDeleteId(null)
     }
   }
+
+  const canEdit = user?.app_role === 'admin' || user?.app_role === 'gerente'
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -85,12 +165,14 @@ export default function Funcionarios() {
             Gerencie os registros de todos os colaboradores da empresa.
           </p>
         </div>
-        <Button
-          onClick={handleCreate}
-          className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-        >
-          <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Colaborador
-        </Button>
+        {canEdit && (
+          <Button
+            onClick={handleCreate}
+            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Colaborador
+          </Button>
+        )}
       </div>
 
       <Card className="shadow-sm border-blue-100/50">
@@ -113,17 +195,22 @@ export default function Funcionarios() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Todos">Todos os Departamentos</SelectItem>
-                  <SelectItem value="TI">TI</SelectItem>
-                  <SelectItem value="Vendas">Vendas</SelectItem>
-                  <SelectItem value="RH">RH</SelectItem>
-                  <SelectItem value="Operações">Operações</SelectItem>
-                  <SelectItem value="Financeiro">Financeiro</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d.id} value={d.nome}>
+                      {d.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <EmployeeTable data={filteredEmployees} onEdit={handleEdit} onDelete={setDeleteId} />
+          <EmployeeTable
+            data={filteredEmployees}
+            onEdit={handleEdit}
+            onDelete={setDeleteId}
+            canEdit={canEdit}
+          />
         </CardContent>
       </Card>
 
@@ -139,6 +226,7 @@ export default function Funcionarios() {
           </SheetHeader>
           <EmployeeForm
             employee={editingEmp}
+            departments={departments}
             onSubmit={handleSave}
             onCancel={() => setIsSheetOpen(false)}
           />

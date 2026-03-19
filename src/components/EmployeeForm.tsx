@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { type Employee } from '@/data/mock'
+import { type Employee } from '@/pages/Funcionarios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
@@ -24,22 +24,23 @@ import {
 const schema = z.object({
   name: z.string().min(2, 'Nome muito curto'),
   email: z.string().email('E-mail inválido'),
-  phone: z.string().min(10, 'Telefone inválido'),
-  cpf: z.string().min(11, 'CPF inválido'),
-  admissionDate: z.string().min(10, 'Data inválida'),
-  department: z.string().min(2, 'Selecione um departamento'),
-  role: z.string().min(2, 'Cargo inválido'),
-  salary: z.coerce.number().min(1, 'Salário inválido'),
+  phone: z.string().optional(),
+  cpf: z.string().optional(),
+  admissionDate: z.string().optional(),
+  department: z.string().min(1, 'Selecione um departamento'),
+  role: z.string().optional(),
+  salary: z.coerce.number().optional(),
   status: z.enum(['Ativo', 'Inativo']),
 })
 
 interface EmployeeFormProps {
   employee?: Employee
+  departments: { id: string; nome: string }[]
   onSubmit: (data: z.infer<typeof schema>) => void
   onCancel: () => void
 }
 
-export function EmployeeForm({ employee, onSubmit, onCancel }: EmployeeFormProps) {
+export function EmployeeForm({ employee, departments, onSubmit, onCancel }: EmployeeFormProps) {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: employee || {
@@ -93,9 +94,9 @@ export function EmployeeForm({ employee, onSubmit, onCancel }: EmployeeFormProps
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {['TI', 'RH', 'Vendas', 'Financeiro', 'Operações'].map((d) => (
-                      <SelectItem key={d} value={d}>
-                        {d}
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={d.nome}>
+                        {d.nome}
                       </SelectItem>
                     ))}
                   </SelectContent>

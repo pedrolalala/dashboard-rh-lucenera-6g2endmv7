@@ -1,5 +1,5 @@
-import { useLocation } from 'react-router-dom'
-import { Bell, Search } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Bell, Search, LogOut } from 'lucide-react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -11,6 +11,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
+import { useAuth } from '@/hooks/use-auth'
 
 const routeNames: Record<string, string> = {
   '/': 'Visão Gerencial',
@@ -24,6 +25,13 @@ const routeNames: Record<string, string> = {
 export function TopHeader() {
   const location = useLocation()
   const pageName = routeNames[location.pathname] || 'Página'
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await signOut()
+    navigate('/login')
+  }
 
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-6 shadow-sm">
@@ -58,16 +66,18 @@ export function TopHeader() {
 
         <div className="flex items-center gap-3 pl-2 border-l">
           <div className="hidden md:flex flex-col text-right">
-            <span className="text-sm font-semibold text-foreground leading-none">Gestor RH</span>
-            <span className="text-xs text-muted-foreground">Admin</span>
+            <span className="text-sm font-semibold text-foreground leading-none">
+              {user?.user_metadata?.name || user?.email?.split('@')[0]}
+            </span>
+            <span className="text-xs text-muted-foreground capitalize">{user?.app_role}</span>
           </div>
-          <Avatar className="size-9 border border-border">
-            <AvatarImage
-              src="https://img.usecurling.com/ppl/thumbnail?gender=male&seed=12"
-              alt="Gestor"
-            />
-            <AvatarFallback>GR</AvatarFallback>
-          </Avatar>
+          <button
+            onClick={handleLogout}
+            className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+            title="Sair"
+          >
+            <LogOut className="size-5" />
+          </button>
         </div>
       </div>
     </header>

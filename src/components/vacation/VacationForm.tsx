@@ -17,21 +17,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { VacationRequest } from '@/data/vacations'
-import { employees } from '@/data/mock'
+import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
+
+interface EmployeeOption {
+  id: string
+  name: string
+}
 
 interface VacationFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (req: VacationRequest) => void
+  onSuccess: () => void
 }
 
-export function VacationForm({ open, onOpenChange, onSubmit }: VacationFormProps) {
+export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProps) {
   const [employeeId, setEmployeeId] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [employees, setEmployees] = useState<EmployeeOption[]>([])
+  const { user } = useAuth()
 
-  const selectedEmployee = useMemo(() => employees.find((e) => e.id === employeeId), [employeeId])
+  useEffect(() => {
+    if (open) {
+      const fetchEmps = async () => {
+        let query = supabase.from('funcionarios_rh').select('id, nome')
+        if (user?.app_role === 'funcionario' && user.funcionario_id) {
+          query = query.eq('id', user.funcionario_id)
+        }
+        const { data } = await query
+        if (data) {
+          setEmployees(data.map((d) => ({ id: d.id, name: d.nome })))
+          if (user?.app_role === 'funcionario' && user.funcionario_id) {
+            setEmployeeId(user.funcionario_id)
+          }
+        }
+      }
+      fetchEmps()
+    } else {
+      if (user?.app_role !== 'funcionario') setEmployeeId('')
+      setStartDate('')
+      setEndDate('')
+    }
+  }, [open, user])
 
   const calculatedDays = useMemo(() => {
     if (startDate && endDate) {
@@ -44,30 +72,22 @@ export function VacationForm({ open, onOpenChange, onSubmit }: VacationFormProps
     return 0
   }, [startDate, endDate])
 
-  useEffect(() => {
-    if (!open) {
-      setEmployeeId('')
-      setStartDate('')
-      setEndDate('')
-    }
-  }, [open])
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedEmployee || !startDate || !endDate || calculatedDays <= 0) return
+    if (!employeeId || !startDate || !endDate || calculatedDays <= 0) return
 
-    const newReq: VacationRequest = {
-      id: `req-${Date.now()}`,
-      employeeId: selectedEmployee.id,
-      employeeName: selectedEmployee.name,
-      department: selectedEmployee.department,
-      startDate: new Date(`${startDate}T12:00:00`),
-      endDate: new Date(`${endDate}T12:00:00`),
-      days: calculatedDays,
+    const { error } = await supabase.from('ferias').insert({
+      funcionario_id: employeeId,
+      data_inicio: startDate,
+      data_fim: endDate,
+      dias: calculatedDays,
       status: 'Pendente',
-    }
+    })
 
-    onSubmit(newReq)
+    if (!error) {
+      onSuccess()
+      onOpenChange(false)
+    }
   }
 
   return (
@@ -82,7 +102,12 @@ export function VacationForm({ open, onOpenChange, onSubmit }: VacationFormProps
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>Colaborador</Label>
-            <Select value={employeeId} onValueChange={setEmployeeId} required>
+            <Select
+              value={employeeId}
+              onValueChange={setEmployeeId}
+              required
+              disabled={user?.app_role === 'funcionario'}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione um funcionário" />
               </SelectTrigger>

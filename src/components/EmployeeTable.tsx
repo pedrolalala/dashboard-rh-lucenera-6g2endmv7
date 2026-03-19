@@ -1,5 +1,5 @@
 import { Edit2, Trash2 } from 'lucide-react'
-import { type Employee } from '@/data/mock'
+import { type Employee } from '@/pages/Funcionarios'
 import {
   Table,
   TableBody,
@@ -16,9 +16,10 @@ interface EmployeeTableProps {
   data: Employee[]
   onEdit: (employee: Employee) => void
   onDelete: (id: string) => void
+  canEdit?: boolean
 }
 
-export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
+export function EmployeeTable({ data, onEdit, onDelete, canEdit }: EmployeeTableProps) {
   return (
     <Table>
       <TableHeader className="bg-slate-50/50">
@@ -28,13 +29,13 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
           <TableHead>Departamento</TableHead>
           <TableHead>Cargo</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead className="text-right">Ações</TableHead>
+          {canEdit && <TableHead className="text-right">Ações</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.length === 0 && (
           <TableRow>
-            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={canEdit ? 6 : 5} className="h-24 text-center text-muted-foreground">
               Nenhum colaborador encontrado.
             </TableCell>
           </TableRow>
@@ -70,21 +71,23 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
                 {emp.status}
               </Badge>
             </TableCell>
-            <TableCell className="text-right">
-              <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon" onClick={() => onEdit(emp)} title="Editar">
-                  <Edit2 className="h-4 w-4 text-secondary" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDelete(emp.id)}
-                  title="Excluir"
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-            </TableCell>
+            {canEdit && (
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" onClick={() => onEdit(emp)} title="Editar">
+                    <Edit2 className="h-4 w-4 text-secondary" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDelete(emp.id)}
+                    title="Excluir"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </TableCell>
+            )}
           </TableRow>
         ))}
       </TableBody>

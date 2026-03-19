@@ -9,8 +9,9 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { VacationRequest } from '@/data/vacations'
+import { VacationRequest } from '@/pages/Ferias'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useAuth } from '@/hooks/use-auth'
 
 interface VacationTableProps {
   data: VacationRequest[]
@@ -18,6 +19,9 @@ interface VacationTableProps {
 }
 
 export function VacationTable({ data, onUpdateStatus }: VacationTableProps) {
+  const { user } = useAuth()
+  const canUpdate = user?.app_role === 'admin' || user?.app_role === 'gerente'
+
   return (
     <div className="max-h-[500px] overflow-auto">
       <Table>
@@ -34,7 +38,7 @@ export function VacationTable({ data, onUpdateStatus }: VacationTableProps) {
           {data.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                Nenhuma solicitação encontrada para os filtros selecionados.
+                Nenhuma solicitação encontrada.
               </TableCell>
             </TableRow>
           ) : (
@@ -71,7 +75,7 @@ export function VacationTable({ data, onUpdateStatus }: VacationTableProps) {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {req.status === 'Pendente' ? (
+                    {req.status === 'Pendente' && canUpdate ? (
                       <>
                         <Tooltip>
                           <TooltipTrigger asChild>

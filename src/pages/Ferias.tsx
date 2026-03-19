@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { PlusCircle, Filter } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,16 +9,64 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { initialRequests, VacationRequest } from '@/data/vacations'
 import { VacationTable } from '@/components/vacation/VacationTable'
 import { VacationForm } from '@/components/vacation/VacationForm'
 import { VacationCalendar } from '@/components/vacation/VacationCalendar'
+import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
+import { useToast } from '@/hooks/use-toast'
+
+export type VacationStatus = 'Pendente' | 'Aprovado' | 'Rejeitado'
+
+export interface VacationRequest {
+  id: string
+  employeeId: string
+  employeeName: string
+  department: string
+  startDate: Date
+  endDate: Date
+  days: number
+  status: VacationStatus
+}
 
 export default function Ferias() {
-  const [requests, setRequests] = useState<VacationRequest[]>(initialRequests)
+  const [requests, setRequests] = useState<VacationRequest[]>([])
   const [deptFilter, setDeptFilter] = useState('Todos')
   const [statusFilter, setStatusFilter] = useState('Todos')
   const [isFormOpen, setIsFormOpen] = useState(false)
+
+  const { user } = useAuth()
+  const { toast } = useToast()
+
+  const fetchRequests = async () => {
+    let query = supabase
+      .from('ferias')
+      .select('*, funcionarios_rh(id, nome, departamentos_rh(nome))')
+
+    if (user?.app_role === 'funcionario' && user?.funcionario_id) {
+      query = query.eq('funcionario_id', user.funcionario_id)
+    }
+
+    const { data } = await query
+    if (data) {
+      setRequests(
+        data.map((d: any) => ({
+          id: d.id,
+          employeeId: d.funcionarios_rh?.id || '',
+          employeeName: d.funcionarios_rh?.nome || '',
+          department: d.funcionarios_rh?.departamentos_rh?.nome || '',
+          startDate: new Date(d.data_inicio),
+          endDate: new Date(d.data_fim),
+          days: d.dias,
+          status: (d.status as VacationStatus) || 'Pendente',
+        })),
+      )
+    }
+  }
+
+  useEffect(() => {
+    fetchRequests()
+  }, [user])
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
@@ -28,13 +76,17 @@ export default function Ferias() {
     })
   }, [requests, deptFilter, statusFilter])
 
-  const handleAddRequest = (newReq: VacationRequest) => {
-    setRequests((prev) => [newReq, ...prev])
-    setIsFormOpen(false)
+  const handleUpdateStatus = async (id: string, status: VacationRequest['status']) => {
+    const { error } = await supabase.from('ferias').update({ status }).eq('id', id)
+    if (!error) {
+      toast({ title: `Solicitação marcada como ${status}` })
+      fetchRequests()
+    }
   }
 
-  const handleUpdateStatus = (id: string, status: VacationRequest['status']) => {
-    setRequests((prev) => prev.map((req) => (req.id === id ? { ...req, status } : req)))
+  const handleSuccess = () => {
+    toast({ title: 'Solicitação criada com sucesso' })
+    fetchRequests()
   }
 
   return (
@@ -100,7 +152,7 @@ export default function Ferias() {
         </div>
       </div>
 
-      <VacationForm open={isFormOpen} onOpenChange={setIsFormOpen} onSubmit={handleAddRequest} />
+      <VacationForm open={isFormOpen} onOpenChange={setIsFormOpen} onSuccess={handleSuccess} />
     </div>
   )
 }

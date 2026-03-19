@@ -1,19 +1,64 @@
+import { useEffect, useState } from 'react'
 import { Users, Building, UserCheck, UserX, ArrowRight, PlusCircle } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { dashboardStats, chartData, recentActivities } from '@/data/mock'
+import { recentActivities } from '@/data/mock'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
-
-const chartConfig = {
-  TI: { label: 'TI', color: 'hsl(var(--chart-1))' },
-  Vendas: { label: 'Vendas', color: 'hsl(var(--chart-2))' },
-  RH: { label: 'RH', color: 'hsl(var(--chart-3))' },
-  Operações: { label: 'Operações', color: 'hsl(var(--chart-4))' },
-  Financeiro: { label: 'Financeiro', color: 'hsl(var(--chart-5))' },
-}
+import { supabase } from '@/lib/supabase/client'
 
 export default function Index() {
+  const [stats, setStats] = useState({ total: 0, departments: 0, active: 0, inactive: 0 })
+  const [chartData, setChartData] = useState<{ sector: string; value: number; fill: string }[]>([])
+  const [configForChart, setConfigForChart] = useState<any>({})
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: funcData } = await supabase
+        .from('funcionarios_rh')
+        .select('status, departamentos_rh(nome)')
+
+      if (funcData) {
+        let active = 0
+        let inactive = 0
+        const deptMap: Record<string, number> = {}
+
+        funcData.forEach((f) => {
+          if (f.status === 'Ativo') active++
+          else inactive++
+
+          const deptName = (f.departamentos_rh as any)?.nome || 'Sem Depto'
+          deptMap[deptName] = (deptMap[deptName] || 0) + 1
+        })
+
+        setStats({
+          total: funcData.length,
+          active,
+          inactive,
+          departments: Object.keys(deptMap).length,
+        })
+
+        const mappedChartData = Object.keys(deptMap).map((dept, i) => ({
+          sector: dept,
+          value: deptMap[dept],
+          fill: `var(--color-${dept.replace(/\s+/g, '')})`,
+        }))
+
+        setChartData(mappedChartData)
+
+        const newConfig = mappedChartData.reduce((acc, item, i) => {
+          acc[item.sector.replace(/\s+/g, '')] = {
+            label: item.sector,
+            color: `hsl(var(--chart-${(i % 5) + 1}))`,
+          }
+          return acc
+        }, {} as any)
+        setConfigForChart(newConfig)
+      }
+    }
+    fetchData()
+  }, [])
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -40,8 +85,8 @@ export default function Index() {
             <Users className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">{dashboardStats.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">+2 no último mês</p>
+            <div className="text-3xl font-bold text-primary">{stats.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Atualizado em tempo real</p>
           </CardContent>
         </Card>
         <Card className="shadow-sm border-blue-100/50">
@@ -52,8 +97,8 @@ export default function Index() {
             <Building className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">{dashboardStats.departments}</div>
-            <p className="text-xs text-muted-foreground mt-1">Sedes: São Paulo</p>
+            <div className="text-3xl font-bold text-primary">{stats.departments}</div>
+            <p className="text-xs text-muted-foreground mt-1">Ativos na base</p>
           </CardContent>
         </Card>
         <Card className="shadow-sm border-blue-100/50">
@@ -64,8 +109,8 @@ export default function Index() {
             <UserCheck className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">{dashboardStats.active}</div>
-            <p className="text-xs text-emerald-600 font-medium mt-1">91% da força de trabalho</p>
+            <div className="text-3xl font-bold text-primary">{stats.active}</div>
+            <p className="text-xs text-emerald-600 font-medium mt-1">Força de trabalho</p>
           </CardContent>
         </Card>
         <Card className="shadow-sm border-blue-100/50">
@@ -76,7 +121,7 @@ export default function Index() {
             <UserX className="h-4 w-4 text-slate-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">{dashboardStats.inactive}</div>
+            <div className="text-3xl font-bold text-primary">{stats.inactive}</div>
             <p className="text-xs text-muted-foreground mt-1">Férias ou afastamento</p>
           </CardContent>
         </Card>
@@ -89,31 +134,37 @@ export default function Index() {
             <CardDescription>Percentual de colaboradores por departamento</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
-            <div className="h-[300px] w-full max-w-[400px]">
-              <ChartContainer config={chartConfig} className="h-full w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      dataKey="value"
-                      nameKey="sector"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={70}
-                      outerRadius={100}
-                      strokeWidth={4}
-                      stroke="var(--background)"
-                      paddingAngle={2}
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </div>
+            {chartData.length > 0 ? (
+              <div className="h-[300px] w-full max-w-[400px]">
+                <ChartContainer config={configForChart} className="h-full w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData}
+                        dataKey="value"
+                        nameKey="sector"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={70}
+                        outerRadius={100}
+                        strokeWidth={4}
+                        stroke="var(--background)"
+                        paddingAngle={2}
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Carregando dados...
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react'
 import { CalendarIcon } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Calendar } from '@/components/ui/calendar'
-import { VacationRequest } from '@/data/vacations'
-import { isWithinInterval, startOfDay } from 'date-fns'
+import { VacationRequest } from '@/pages/Ferias'
+import { isWithinInterval, startOfDay, parseISO } from 'date-fns'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 interface VacationCalendarProps {
@@ -18,8 +18,8 @@ export function VacationCalendar({ requests }: VacationCalendarProps) {
     return requests.filter((req) => {
       if (req.status !== 'Aprovado') return false
       const d = startOfDay(date)
-      const start = startOfDay(req.startDate)
-      const end = startOfDay(req.endDate)
+      const start = startOfDay(new Date(req.startDate))
+      const end = startOfDay(new Date(req.endDate))
       return isWithinInterval(d, { start, end })
     })
   }, [date, requests])
@@ -45,8 +45,8 @@ export function VacationCalendar({ requests }: VacationCalendarProps) {
                 (r) =>
                   r.status === 'Aprovado' &&
                   isWithinInterval(startOfDay(day), {
-                    start: startOfDay(r.startDate),
-                    end: startOfDay(r.endDate),
+                    start: startOfDay(new Date(r.startDate)),
+                    end: startOfDay(new Date(r.endDate)),
                   }),
               ),
           }}
