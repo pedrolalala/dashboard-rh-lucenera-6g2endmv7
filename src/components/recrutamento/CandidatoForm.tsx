@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -40,9 +41,9 @@ export function CandidatoForm({ onSuccess }: { onSuccess: () => void }) {
     try {
       let curriculo_url = null
 
-      if (values.file) {
+      if (values.file && values.file instanceof File) {
         const fileExt = values.file.name.split('.').pop()
-        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
+        const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`
 
         const { error: uploadError } = await supabase.storage
           .from('Arquivo-recrutamento')
@@ -57,12 +58,11 @@ export function CandidatoForm({ onSuccess }: { onSuccess: () => void }) {
         curriculo_url = publicUrlData.publicUrl
       }
 
-      const supa = supabase as any
-      const { error: insertError } = await supa.from('candidatos').insert({
+      const { error: insertError } = await supabase.from('candidatos').insert({
         nome: values.nome,
         email: values.email,
-        telefone: values.telefone,
-        vaga: values.vaga,
+        telefone: values.telefone || null,
+        vaga: values.vaga || null,
         curriculo_url,
         status: 'Em Análise',
       })
@@ -86,82 +86,97 @@ export function CandidatoForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="nome"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome Completo</FormLabel>
-              <FormControl>
-                <Input placeholder="João da Silva" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>E-mail</FormLabel>
-              <FormControl>
-                <Input placeholder="joao@exemplo.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-4">
           <FormField
             control={form.control}
-            name="telefone"
+            name="nome"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Telefone</FormLabel>
+                <FormLabel>Nome Completo *</FormLabel>
                 <FormControl>
-                  <Input placeholder="(11) 99999-9999" {...field} />
+                  <Input placeholder="Ex: João da Silva" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <FormField
             control={form.control}
-            name="vaga"
+            name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Vaga</FormLabel>
+                <FormLabel>E-mail *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Desenvolvedor Frontend" {...field} />
+                  <Input type="email" placeholder="Ex: joao@exemplo.com" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="telefone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input type="tel" placeholder="(11) 99999-9999" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="vaga"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Vaga / Cargo</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Desenvolvedor Frontend" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="file"
+            render={({ field: { value, onChange, ...fieldProps } }) => (
+              <FormItem>
+                <FormLabel>Currículo (Anexo)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    className="cursor-pointer file:cursor-pointer file:bg-primary/10 file:text-primary file:font-medium file:border-0 file:rounded-sm file:px-3 file:py-1 file:mr-3 text-muted-foreground"
+                    onChange={(event) => onChange(event.target.files?.[0])}
+                    {...fieldProps}
+                  />
+                </FormControl>
+                <FormDescription>Formatos aceitos: PDF, DOC, DOCX.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        <FormField
-          control={form.control}
-          name="file"
-          render={({ field: { value, onChange, ...fieldProps } }) => (
-            <FormItem>
-              <FormLabel>Currículo (PDF, DOC, DOCX)</FormLabel>
-              <FormControl>
-                <Input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={(event) => onChange(event.target.files?.[0])}
-                  {...fieldProps}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          {isSubmitting ? 'Salvando...' : 'Cadastrar Candidato'}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            'Cadastrar Candidato'
+          )}
         </Button>
       </form>
     </Form>

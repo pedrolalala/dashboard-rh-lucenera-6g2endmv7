@@ -66,6 +66,39 @@ export type Database = {
           },
         ]
       }
+      candidatos: {
+        Row: {
+          created_at: string
+          curriculo_url: string | null
+          email: string
+          id: string
+          nome: string
+          status: string | null
+          telefone: string | null
+          vaga: string | null
+        }
+        Insert: {
+          created_at?: string
+          curriculo_url?: string | null
+          email: string
+          id?: string
+          nome: string
+          status?: string | null
+          telefone?: string | null
+          vaga?: string | null
+        }
+        Update: {
+          created_at?: string
+          curriculo_url?: string | null
+          email?: string
+          id?: string
+          nome?: string
+          status?: string | null
+          telefone?: string | null
+          vaga?: string | null
+        }
+        Relationships: []
+      }
       controle_ponto: {
         Row: {
           created_at: string
@@ -863,6 +896,15 @@ export const Constants = {
 //   comentarios: text (nullable)
 //   data_avaliacao: timestamp with time zone (not null, default: now())
 //   avaliador_id: uuid (not null)
+// Table: candidatos
+//   id: uuid (not null, default: gen_random_uuid())
+//   nome: text (not null)
+//   email: text (not null)
+//   telefone: text (nullable)
+//   vaga: text (nullable)
+//   status: text (nullable, default: 'Em Análise'::text)
+//   curriculo_url: text (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: controle_ponto
 //   id: uuid (not null, default: gen_random_uuid())
 //   funcionario_id: uuid (not null)
@@ -1047,6 +1089,8 @@ export const Constants = {
 //   CHECK avaliacoes_produtividade_check: CHECK (((produtividade >= 1) AND (produtividade <= 5)))
 //   CHECK avaliacoes_qualidade_check: CHECK (((qualidade >= 1) AND (qualidade <= 5)))
 //   CHECK avaliacoes_trabalho_equipe_check: CHECK (((trabalho_equipe >= 1) AND (trabalho_equipe <= 5)))
+// Table: candidatos
+//   PRIMARY KEY candidatos_pkey: PRIMARY KEY (id)
 // Table: controle_ponto
 //   FOREIGN KEY controle_ponto_funcionario_id_fkey: FOREIGN KEY (funcionario_id) REFERENCES funcionarios_rh(id) ON DELETE CASCADE
 //   PRIMARY KEY controle_ponto_pkey: PRIMARY KEY (id)
@@ -1080,6 +1124,10 @@ export const Constants = {
 //     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
 //   Policy "auth_select_func_avaliacoes" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid())))
+// Table: candidatos
+//   Policy "candidatos_all_admin_gerente" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
 // Table: controle_ponto
 //   Policy "ponto_all_admin" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))

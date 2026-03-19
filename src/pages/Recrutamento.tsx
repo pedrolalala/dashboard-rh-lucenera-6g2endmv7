@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Plus, FileText, Loader2 } from 'lucide-react'
+import { Plus, FileText, Loader2, ExternalLink } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogDescription,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetDescription,
+} from '@/components/ui/sheet'
 import {
   Table,
   TableBody,
@@ -30,29 +30,36 @@ import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase/client'
 import { CandidatoForm } from '@/components/recrutamento/CandidatoForm'
 import { useAuth } from '@/hooks/use-auth'
+import { Database } from '@/lib/supabase/types'
+
+type Candidato = Database['public']['Tables']['candidatos']['Row']
 
 const STATUS_COLORS: Record<string, string> = {
-  'Em Análise': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-  Entrevista: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-  Aprovado: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-  Reprovado: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+  'Em Análise':
+    'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+  Entrevista:
+    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+  Aprovado:
+    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800',
+  Reprovado:
+    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800',
 }
 
 export default function Recrutamento() {
-  const [candidatos, setCandidatos] = useState<any[]>([])
+  const [candidatos, setCandidatos] = useState<Candidato[]>([])
   const [loading, setLoading] = useState(true)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
   const { toast } = useToast()
   const { user } = useAuth()
   const canManage = user?.app_role === 'admin' || user?.app_role === 'gerente'
 
   const fetchCandidatos = async () => {
     setLoading(true)
-    const supa = supabase as any
-    const { data, error } = await supa
+    const { data, error } = await supabase
       .from('candidatos')
       .select('*')
       .order('created_at', { ascending: false })
+
     if (error) {
       toast({
         title: 'Erro',
@@ -70,8 +77,7 @@ export default function Recrutamento() {
   }, [])
 
   const handleStatusChange = async (id: string, newStatus: string) => {
-    const supa = supabase as any
-    const { error } = await supa.from('candidatos').update({ status: newStatus }).eq('id', id)
+    const { error } = await supabase.from('candidatos').update({ status: newStatus }).eq('id', id)
     if (error) {
       toast({ title: 'Erro', description: 'Erro ao atualizar status', variant: 'destructive' })
     } else {
@@ -92,27 +98,27 @@ export default function Recrutamento() {
           </p>
         </div>
         {canManage && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" /> Novo Candidato
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Cadastrar Candidato</DialogTitle>
-                <DialogDescription>
-                  Insira os dados do candidato e anexe o currículo.
-                </DialogDescription>
-              </DialogHeader>
+            </SheetTrigger>
+            <SheetContent className="sm:max-w-[500px] overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle>Adicionar Novo Candidato</SheetTitle>
+                <SheetDescription>
+                  Insira os dados do candidato e anexe o currículo em formato PDF ou Word.
+                </SheetDescription>
+              </SheetHeader>
               <CandidatoForm
                 onSuccess={() => {
-                  setIsDialogOpen(false)
+                  setIsSheetOpen(false)
                   fetchCandidatos()
                 }}
               />
-            </DialogContent>
-          </Dialog>
+            </SheetContent>
+          </Sheet>
         )}
       </div>
 
@@ -123,7 +129,7 @@ export default function Recrutamento() {
         </CardHeader>
         <CardContent className="p-0">
           {loading ? (
-            <div className="p-8 flex justify-center items-center">
+            <div className="p-12 flex justify-center items-center">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : candidatos.length === 0 ? (
@@ -131,6 +137,9 @@ export default function Recrutamento() {
               <FileText className="h-12 w-12 text-muted-foreground/20 mb-4" />
               <p className="text-muted-foreground text-sm uppercase tracking-widest font-medium">
                 Nenhum candidato encontrado
+              </p>
+              <p className="text-muted-foreground/60 text-xs mt-1">
+                Cadastre um novo candidato para começar.
               </p>
             </div>
           ) : (
@@ -157,7 +166,7 @@ export default function Recrutamento() {
                     <TableCell>
                       {canManage ? (
                         <Select
-                          defaultValue={candidato.status}
+                          defaultValue={candidato.status || 'Em Análise'}
                           onValueChange={(value) => handleStatusChange(candidato.id, value)}
                         >
                           <SelectTrigger className="w-[140px] h-8 text-xs">
@@ -171,7 +180,10 @@ export default function Recrutamento() {
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Badge className={STATUS_COLORS[candidato.status] || ''} variant="outline">
+                        <Badge
+                          className={STATUS_COLORS[candidato.status || 'Em Análise']}
+                          variant="outline"
+                        >
                           {candidato.status}
                         </Badge>
                       )}
@@ -180,7 +192,7 @@ export default function Recrutamento() {
                       {candidato.curriculo_url ? (
                         <Button variant="ghost" size="sm" asChild>
                           <a href={candidato.curriculo_url} target="_blank" rel="noreferrer">
-                            <FileText className="w-4 h-4 mr-2" /> Currículo
+                            <ExternalLink className="w-4 h-4 mr-2" /> Currículo
                           </a>
                         </Button>
                       ) : (
