@@ -1,29 +1,32 @@
 import { useState, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Fingerprint, Loader2, CheckCircle2, Clock, ArrowRight } from 'lucide-react'
+import { Fingerprint, Loader2, CheckCircle2, Clock, ArrowRight, AlertCircle } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
 
 export function PontoRelogio({ onPunch }: { onPunch?: () => void }) {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const { toast } = useToast()
   const [todayRecord, setTodayRecord] = useState<any>(null)
   const [punchLoading, setPunchLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [now, setNow] = useState(new Date())
 
-  // Update clock every second
+  // Atualiza o relógio a cada segundo
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
 
   const fetchTodayRecord = useCallback(async () => {
-    if (!user?.funcionario_id) return
+    if (!user?.funcionario_id) {
+      if (!authLoading) setInitialLoading(false)
+      return
+    }
     const { data } = await supabase
       .from('controle_ponto')
       .select('*')
@@ -31,11 +34,14 @@ export function PontoRelogio({ onPunch }: { onPunch?: () => void }) {
       .eq('data', format(new Date(), 'yyyy-MM-dd'))
       .maybeSingle()
     setTodayRecord(data)
-  }, [user?.funcionario_id])
+    setInitialLoading(false)
+  }, [user?.funcionario_id, authLoading])
 
   useEffect(() => {
-    fetchTodayRecord()
-  }, [fetchTodayRecord])
+    if (!authLoading) {
+      fetchTodayRecord()
+    }
+  }, [fetchTodayRecord, authLoading])
 
   const handlePunch = async (type: 'in' | 'out') => {
     if (!user?.funcionario_id) return
@@ -62,7 +68,11 @@ export function PontoRelogio({ onPunch }: { onPunch?: () => void }) {
 
         const { error } = await supabase
           .from('controle_ponto')
-          .update({ hora_saida: timeStr, total_horas: totalHours })
+          .update({
+            hora_saida: timeStr,
+            total_horas: totalHours,
+            status: 'presente',
+          })
           .eq('id', todayRecord.id)
         if (error) throw error
         toast({ title: 'Saída registrada com sucesso.' })
@@ -79,6 +89,35 @@ export function PontoRelogio({ onPunch }: { onPunch?: () => void }) {
     } finally {
       setPunchLoading(false)
     }
+  }
+
+  if (authLoading || initialLoading) {
+    return (
+      <Card className="border-border overflow-hidden bg-background shadow-sm h-[240px] flex flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
+        <p className="text-sm text-muted-foreground uppercase tracking-widest">
+          Carregando relógio de ponto...
+        </p>
+      </Card>
+    )
+  }
+
+  // Fallback caso o usuário da plataforma não tenha um cadastro em funcionarios_rh correspondente.
+  // Graças à nova migration, este cenário não deve ocorrer, mas o fallback é providenciado.
+  if (!user?.funcionario_id) {
+    return (
+      <Card className="border-border overflow-hidden bg-background shadow-sm">
+        <div className="p-10 flex flex-col items-center justify-center text-center bg-muted/10">
+          <AlertCircle className="h-10 w-10 text-muted-foreground mb-4 opacity-50" />
+          <h3 className="text-lg font-medium text-foreground mb-2">Conta não vinculada</h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            Seu usuário ainda não possui um cadastro de funcionário associado no sistema. Por favor,
+            contate o administrador (TI/RH) para realizar a vinculação e liberar o registro de
+            ponto.
+          </p>
+        </div>
+      </Card>
+    )
   }
 
   const hasPunchedIn = !!todayRecord
