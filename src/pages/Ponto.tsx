@@ -1,7 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { format, subDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Calendar as CalendarIcon, Clock, Filter, Loader2, Fingerprint } from 'lucide-react'
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  Filter,
+  Loader2,
+  Fingerprint,
+  RefreshCw,
+} from 'lucide-react'
 import { DateRange } from 'react-day-picker'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -29,9 +36,18 @@ import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  presente: { label: 'Presente', color: 'bg-foreground text-background border-transparent' },
-  ausente: { label: 'Ausente', color: 'bg-transparent text-destructive border-destructive' },
-  atraso: { label: 'Atraso', color: 'bg-transparent text-muted-foreground border-border' },
+  presente: {
+    label: 'Presente',
+    color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
+  },
+  ausente: {
+    label: 'Ausente',
+    color: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+  },
+  atraso: {
+    label: 'Atraso',
+    color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20',
+  },
 }
 
 export default function Ponto() {
@@ -45,6 +61,7 @@ export default function Ponto() {
   const [isLoading, setIsLoading] = useState(false)
   const [todayRecord, setTodayRecord] = useState<any>(null)
   const [punchLoading, setPunchLoading] = useState(false)
+  const [isSyncingTeams, setIsSyncingTeams] = useState(false)
   const { user } = useAuth()
   const { toast } = useToast()
 
@@ -72,10 +89,13 @@ export default function Ponto() {
       .from('controle_ponto')
       .select('*, funcionarios_rh!inner(nome, departamentos_rh(nome))')
       .order('data', { ascending: false })
-    if (user?.app_role === 'funcionario' && user?.funcionario_id)
+
+    if (user?.app_role === 'funcionario' && user?.funcionario_id) {
       query = query.eq('funcionario_id', user.funcionario_id)
+    }
     if (dateRange?.from) query = query.gte('data', format(dateRange.from, 'yyyy-MM-dd'))
     if (dateRange?.to) query = query.lte('data', format(dateRange.to, 'yyyy-MM-dd'))
+
     const { data } = await query
     if (data) setLogs(data)
     setIsLoading(false)
@@ -130,6 +150,26 @@ export default function Ponto() {
     }
   }
 
+  const handleSyncTeams = async () => {
+    setIsSyncingTeams(true)
+    try {
+      const { error } = await supabase.functions.invoke('sync-teams')
+      if (error) throw error
+      toast({ title: 'Sincronização com Microsoft Teams iniciada com sucesso.' })
+      // Simulate a small delay for better UX
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      fetchLogs()
+    } catch (e: any) {
+      toast({
+        title: 'Erro na sincronização',
+        description: e.message || 'Falha ao conectar com o Teams.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSyncingTeams(false)
+    }
+  }
+
   const filteredLogs = useMemo(
     () =>
       logs.filter(
@@ -138,6 +178,7 @@ export default function Ponto() {
       ),
     [logs, selectedDept],
   )
+
   const canManage = user?.app_role === 'admin' || user?.app_role === 'gerente'
 
   return (
@@ -152,7 +193,7 @@ export default function Ponto() {
       </div>
 
       {user?.funcionario_id && (
-        <Card className="shadow-none border-border">
+        <Card className="shadow-none border-border bg-background">
           <CardHeader className="bg-transparent border-b border-border pb-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
@@ -168,7 +209,7 @@ export default function Ponto() {
                   <Button
                     onClick={() => handlePunch('in')}
                     disabled={punchLoading}
-                    className="uppercase tracking-widest text-xs"
+                    className="uppercase tracking-widest text-xs bg-[#B87333] hover:bg-[#9e6029] text-white"
                   >
                     {punchLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Registrar
                     Entrada
@@ -177,8 +218,8 @@ export default function Ponto() {
                   <Button
                     onClick={() => handlePunch('out')}
                     disabled={punchLoading}
-                    variant="secondary"
-                    className="uppercase tracking-widest text-xs"
+                    variant="outline"
+                    className="uppercase tracking-widest text-xs border-[#B87333] text-[#B87333] hover:bg-[#B87333] hover:text-white"
                   >
                     {punchLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Registrar
                     Saída
@@ -216,7 +257,7 @@ export default function Ponto() {
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
                     Total
                   </p>
-                  <p className="text-2xl font-light text-foreground">
+                  <p className="text-2xl font-light text-[#B87333]">
                     {Number(todayRecord.total_horas).toFixed(2)}h
                   </p>
                 </div>
@@ -226,18 +267,32 @@ export default function Ponto() {
         </Card>
       )}
 
-      <Card className="shadow-none border-border">
-        <CardHeader className="pb-3 border-b border-border bg-transparent">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <Card className="shadow-none border-border bg-background">
+        <CardHeader className="pb-4 border-b border-border bg-transparent">
+          <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
             <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Registros
+              <Clock className="h-4 w-4" /> Registros de Ponto
             </CardTitle>
-            <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
               {canManage && (
-                <>
-                  <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                <Button
+                  onClick={handleSyncTeams}
+                  disabled={isSyncingTeams}
+                  className="w-full sm:w-auto bg-transparent border border-[#B87333] text-[#B87333] hover:bg-[#B87333]/10 rounded-none uppercase tracking-widest text-[10px] h-9"
+                >
+                  {isSyncingTeams ? (
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                  )}
+                  Sincronizar com Teams
+                </Button>
+              )}
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {canManage && (
                   <Select value={selectedDept} onValueChange={setSelectedDept}>
-                    <SelectTrigger className="w-full sm:w-[180px] bg-transparent">
+                    <SelectTrigger className="w-full sm:w-[160px] bg-transparent text-xs h-9">
                       <SelectValue placeholder="Departamento" />
                     </SelectTrigger>
                     <SelectContent>
@@ -249,37 +304,37 @@ export default function Ponto() {
                       ))}
                     </SelectContent>
                   </Select>
-                </>
-              )}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-full sm:w-[260px] justify-start text-left font-normal bg-transparent',
-                      !dateRange && 'text-muted-foreground',
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange?.from
-                      ? dateRange.to
-                        ? `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`
-                        : format(dateRange.from, 'dd/MM/yyyy')
-                      : 'Selecione o período'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 border-border rounded-none" align="end">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={dateRange?.from}
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    numberOfMonths={2}
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
+                )}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full sm:w-[240px] justify-start text-left font-normal bg-transparent text-xs h-9',
+                        !dateRange && 'text-muted-foreground',
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-3 w-3" />
+                      {dateRange?.from
+                        ? dateRange.to
+                          ? `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`
+                          : format(dateRange.from, 'dd/MM/yyyy')
+                        : 'Selecione o período'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 border-border rounded-none" align="end">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                      locale={ptBR}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -287,11 +342,11 @@ export default function Ponto() {
           <Table>
             <TableHeader className="bg-muted/10">
               <TableRow>
-                <TableHead>Colaborador</TableHead>
+                <TableHead>Funcionário</TableHead>
                 <TableHead>Data</TableHead>
-                <TableHead>Entrada</TableHead>
-                <TableHead>Saída</TableHead>
-                <TableHead className="text-center">Total</TableHead>
+                <TableHead>Hora Entrada</TableHead>
+                <TableHead>Hora Saída</TableHead>
+                <TableHead className="text-center">Total Horas</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -308,7 +363,7 @@ export default function Ponto() {
                     colSpan={6}
                     className="text-center py-8 text-muted-foreground text-xs uppercase tracking-widest"
                   >
-                    Nenhum registro encontrado.
+                    Nenhum registro encontrado no período.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -319,26 +374,31 @@ export default function Ponto() {
                   }
                   return (
                     <TableRow key={log.id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium text-sm">
                         {log.funcionarios_rh?.nome || 'Desconhecido'}
                         <div className="text-[10px] text-muted-foreground font-normal uppercase tracking-widest mt-1">
                           {log.funcionarios_rh?.departamentos_rh?.nome}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-sm">
                         {format(new Date(log.data + 'T12:00:00'), 'dd/MM/yyyy')}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-sm">
                         {log.hora_entrada ? log.hora_entrada.substring(0, 5) : '-'}
                       </TableCell>
-                      <TableCell>{log.hora_saida ? log.hora_saida.substring(0, 5) : '-'}</TableCell>
-                      <TableCell className="text-center font-medium">
+                      <TableCell className="text-sm">
+                        {log.hora_saida ? log.hora_saida.substring(0, 5) : '-'}
+                      </TableCell>
+                      <TableCell className="text-center font-medium text-sm">
                         {log.total_horas ? `${Number(log.total_horas).toFixed(2)}h` : '-'}
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className={cn(status.color, 'uppercase tracking-widest text-[10px]')}
+                          className={cn(
+                            status.color,
+                            'uppercase tracking-widest text-[10px] font-semibold',
+                          )}
                         >
                           {status.label}
                         </Badge>
