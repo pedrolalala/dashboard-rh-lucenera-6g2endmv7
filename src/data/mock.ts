@@ -1,3 +1,16 @@
+export interface Employee {
+  id: string
+  name: string
+  department: string
+  role: string
+  status: 'Ativo' | 'Inativo'
+  email: string
+  phone: string
+  cpf: string
+  admissionDate: string
+  salary: number
+}
+
 const names = [
   'Ana Silva',
   'Carlos Santos',
@@ -26,13 +39,17 @@ const names = [
 const depts = ['TI', 'Vendas', 'RH', 'Operações', 'Financeiro']
 const roles = ['Analista', 'Especialista', 'Coordenador(a)', 'Assistente', 'Gerente']
 
-export const employees = names.map((name, i) => ({
+export const employees: Employee[] = names.map((name, i) => ({
   id: String(i + 1).padStart(3, '0'),
   name,
   department: depts[i % depts.length],
   role: roles[i % roles.length],
   status: i >= 21 ? 'Inativo' : 'Ativo',
   email: `${name.split(' ')[0].toLowerCase()}@lucenera.com`,
+  phone: `(11) 98765-${String(1000 + i).padStart(4, '0')}`,
+  cpf: `123.456.789-${String(10 + i).padStart(2, '0')}`,
+  admissionDate: `2023-01-${String((i % 28) + 1).padStart(2, '0')}`,
+  salary: 4500 + i * 250,
 }))
 
 export const dashboardStats = {
