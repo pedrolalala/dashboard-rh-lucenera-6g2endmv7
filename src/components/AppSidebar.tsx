@@ -1,53 +1,59 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, CalendarDays, Wallet, Star, Clock, FileText } from 'lucide-react'
+import { Users, Calendar, LayoutDashboard, Settings, LogOut, Briefcase } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
 } from '@/components/ui/sidebar'
+import { useAuth } from '@/hooks/use-auth'
+import logoImg from '@/assets/logotipo-vertical_v1_preto-9e726.png'
 
-const navItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Funcionários', url: '/funcionarios', icon: Users },
-  { title: 'Férias', url: '/ferias', icon: CalendarDays },
-  { title: 'Folha de Pagamento', url: '/folha-pagamento', icon: Wallet },
-  { title: 'Avaliações', url: '/avaliacoes', icon: Star },
-  { title: 'Controle de Ponto', url: '/controle-ponto', icon: Clock },
-  { title: 'Relatórios', url: '/relatorios', icon: FileText },
+const navigation = [
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Funcionários', href: '/funcionarios', icon: Users },
+  { name: 'Férias', href: '/ferias', icon: Calendar },
+  { name: 'Cargos', href: '/cargos', icon: Briefcase },
+  { name: 'Configurações', href: '/configuracoes', icon: Settings },
 ]
 
 export function AppSidebar() {
   const location = useLocation()
+  const { signOut } = useAuth()
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-6 border-b border-sidebar-border bg-sidebar">
-        <div className="flex flex-col items-start px-2 py-2">
-          <span className="font-light text-2xl tracking-[0.25em] text-sidebar-primary-foreground leading-none">
-            LUCE
-          </span>
-          <span className="font-bold text-2xl tracking-[0.25em] text-sidebar-primary-foreground leading-none">
-            NERA
-          </span>
-        </div>
+      <SidebarHeader className="p-6 flex items-center justify-center border-b border-border/50">
+        <Link to="/" className="w-full flex justify-center hover:opacity-80 transition-opacity">
+          <img
+            src={logoImg}
+            alt="Lucenera Logo"
+            className="h-12 w-auto object-contain dark:invert"
+          />
+        </Link>
       </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupContent className="mt-4">
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-4 px-4">
+            Menu Principal
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
-                const isActive = location.pathname === item.url
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href
                 return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                      <Link to={item.url} className="flex items-center gap-3">
-                        <item.icon className="size-4" />
-                        <span className="uppercase text-xs tracking-wider">{item.title}</span>
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                      <Link to={item.href} className="flex items-center gap-3 py-2">
+                        <item.icon className="w-4 h-4" />
+                        <span className="font-medium">{item.name}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -57,6 +63,21 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-4 border-t border-border/50">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={signOut}
+              variant="outline"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-500 dark:hover:text-red-400 dark:hover:bg-red-950/30 w-full flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="font-medium">Sair do sistema</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   )
 }
