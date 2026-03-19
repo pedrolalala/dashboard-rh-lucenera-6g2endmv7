@@ -13,6 +13,7 @@ import Avaliacoes from './pages/Avaliacoes'
 import Ponto from './pages/Ponto'
 import Relatorios from './pages/Relatorios'
 import Cargos from './pages/Cargos'
+import Configuracoes from './pages/Configuracoes'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 import { ThemeProvider } from './components/theme-provider'
@@ -55,6 +56,7 @@ const App = () => (
                 <Route path="/controle-ponto" element={<Ponto />} />
                 <Route path="/relatorios" element={<Relatorios />} />
                 <Route path="/cargos" element={<Cargos />} />
+                <Route path="/configuracoes" element={<Configuracoes />} />
               </Route>
             </Route>
             <Route path="*" element={<NotFound />} />
