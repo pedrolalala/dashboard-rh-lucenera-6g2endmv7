@@ -36,12 +36,13 @@ export function PontoRelogio({ onPunch }: { onPunch?: () => void }) {
       const now = new Date()
       const timeStr = format(now, 'HH:mm:ss')
       const dateStr = format(now, 'yyyy-MM-dd')
+
       if (type === 'in') {
         const { error } = await supabase.from('controle_ponto').insert({
           funcionario_id: user.funcionario_id,
           data: dateStr,
           hora_entrada: timeStr,
-          status: timeStr <= '09:00:00' ? 'presente' : 'atraso',
+          status: 'presente',
         })
         if (error) throw error
         toast({ title: 'Entrada registrada com sucesso.' })
@@ -50,6 +51,7 @@ export function PontoRelogio({ onPunch }: { onPunch?: () => void }) {
         const [inH, inM] = todayRecord.hora_entrada.split(':').map(Number)
         const totalMin = now.getHours() * 60 + now.getMinutes() - (inH * 60 + inM)
         const totalHours = Number((Math.max(0, totalMin) / 60).toFixed(2))
+
         const { error } = await supabase
           .from('controle_ponto')
           .update({ hora_saida: timeStr, total_horas: totalHours })
@@ -57,6 +59,7 @@ export function PontoRelogio({ onPunch }: { onPunch?: () => void }) {
         if (error) throw error
         toast({ title: 'Saída registrada com sucesso.' })
       }
+
       await fetchTodayRecord()
       onPunch?.()
     } catch (e: any) {
@@ -76,7 +79,7 @@ export function PontoRelogio({ onPunch }: { onPunch?: () => void }) {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
-              <Fingerprint className="h-4 w-4" /> Relógio de Ponto
+              <Fingerprint className="h-4 w-4" /> Registro de Ponto
             </CardTitle>
             <CardDescription>
               {format(new Date(), "dd 'de' MMMM, yyyy", { locale: ptBR })}
@@ -103,7 +106,7 @@ export function PontoRelogio({ onPunch }: { onPunch?: () => void }) {
               </Button>
             ) : (
               <div className="text-xs text-muted-foreground uppercase tracking-widest border border-border px-4 py-2 font-medium">
-                Jornada Concluída
+                Jornada de hoje concluída
               </div>
             )}
           </div>
