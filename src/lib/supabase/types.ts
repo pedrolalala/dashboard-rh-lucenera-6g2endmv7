@@ -9,6 +9,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      departamentos_rh: {
+        Row: {
+          id: string
+          nome: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       entregas_finalizadas: {
         Row: {
           cliente: string | null
@@ -143,6 +158,97 @@ export type Database = {
           tipo_problema?: string | null
         }
         Relationships: []
+      }
+      ferias: {
+        Row: {
+          data_fim: string
+          data_inicio: string
+          data_solicitacao: string
+          dias: number
+          funcionario_id: string | null
+          id: string
+          status: string | null
+        }
+        Insert: {
+          data_fim: string
+          data_inicio: string
+          data_solicitacao?: string
+          dias: number
+          funcionario_id?: string | null
+          id?: string
+          status?: string | null
+        }
+        Update: {
+          data_fim?: string
+          data_inicio?: string
+          data_solicitacao?: string
+          dias?: number
+          funcionario_id?: string | null
+          id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'ferias_funcionario_id_fkey'
+            columns: ['funcionario_id']
+            isOneToOne: false
+            referencedRelation: 'funcionarios_rh'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      funcionarios_rh: {
+        Row: {
+          cargo: string | null
+          cpf: string | null
+          created_at: string
+          data_admissao: string | null
+          departamento_id: string | null
+          email: string
+          id: string
+          nome: string
+          salario_base: number | null
+          status: string | null
+          telefone: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cargo?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_admissao?: string | null
+          departamento_id?: string | null
+          email: string
+          id?: string
+          nome: string
+          salario_base?: number | null
+          status?: string | null
+          telefone?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cargo?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_admissao?: string | null
+          departamento_id?: string | null
+          email?: string
+          id?: string
+          nome?: string
+          salario_base?: number | null
+          status?: string | null
+          telefone?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'funcionarios_rh_departamento_id_fkey'
+            columns: ['departamento_id']
+            isOneToOne: false
+            referencedRelation: 'departamentos_rh'
+            referencedColumns: ['id']
+          },
+        ]
       }
       projetos: {
         Row: {
@@ -603,6 +709,9 @@ export const Constants = {
 // --- COLUMN TYPES (actual PostgreSQL types) ---
 // Use this to know the real database type when writing migrations.
 // "string" in TypeScript types above may be uuid, text, varchar, timestamptz, etc.
+// Table: departamentos_rh
+//   id: uuid (not null, default: gen_random_uuid())
+//   nome: text (not null)
 // Table: entregas_finalizadas
 //   id: text (nullable)
 //   separacao_id: text (nullable)
@@ -644,6 +753,27 @@ export const Constants = {
 //   fotos_resolucao: text (nullable)
 //   observacoes_resolucao: text (nullable)
 //   resolved_by_user_id: text (nullable)
+// Table: ferias
+//   id: uuid (not null, default: gen_random_uuid())
+//   funcionario_id: uuid (nullable)
+//   data_inicio: date (not null)
+//   data_fim: date (not null)
+//   dias: integer (not null)
+//   status: text (nullable, default: 'Pendente'::text)
+//   data_solicitacao: timestamp with time zone (not null, default: now())
+// Table: funcionarios_rh
+//   id: uuid (not null, default: gen_random_uuid())
+//   nome: text (not null)
+//   email: text (not null)
+//   telefone: text (nullable)
+//   cpf: text (nullable)
+//   data_admissao: timestamp with time zone (nullable)
+//   departamento_id: uuid (nullable)
+//   cargo: text (nullable)
+//   salario_base: numeric (nullable)
+//   status: text (nullable, default: 'Ativo'::text)
+//   user_id: uuid (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: projetos
 //   id: uuid (not null, default: gen_random_uuid())
 //   nome: text (not null)
@@ -736,6 +866,16 @@ export const Constants = {
 //   created_at: timestamp with time zone (not null, default: now())
 
 // --- CONSTRAINTS ---
+// Table: departamentos_rh
+//   UNIQUE departamentos_rh_nome_key: UNIQUE (nome)
+//   PRIMARY KEY departamentos_rh_pkey: PRIMARY KEY (id)
+// Table: ferias
+//   FOREIGN KEY ferias_funcionario_id_fkey: FOREIGN KEY (funcionario_id) REFERENCES funcionarios_rh(id) ON DELETE CASCADE
+//   PRIMARY KEY ferias_pkey: PRIMARY KEY (id)
+// Table: funcionarios_rh
+//   FOREIGN KEY funcionarios_rh_departamento_id_fkey: FOREIGN KEY (departamento_id) REFERENCES departamentos_rh(id)
+//   PRIMARY KEY funcionarios_rh_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY funcionarios_rh_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
 // Table: projetos
 //   PRIMARY KEY projetos_pkey: PRIMARY KEY (id)
 // Table: tabela_precos
@@ -743,9 +883,34 @@ export const Constants = {
 // Table: usuarios
 //   FOREIGN KEY usuarios_id_fkey: FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
 //   PRIMARY KEY usuarios_pkey: PRIMARY KEY (id)
-//   CHECK usuarios_role_check: CHECK ((role = ANY (ARRAY['admin'::text, 'viewer'::text])))
+//   CHECK usuarios_role_check: CHECK ((role = ANY (ARRAY['admin'::text, 'viewer'::text, 'gerente'::text, 'funcionario'::text])))
 
 // --- ROW LEVEL SECURITY POLICIES ---
+// Table: departamentos_rh
+//   Policy "dept_all_admin" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
+//   Policy "dept_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: true
+// Table: entregas_finalizadas
+//   Policy "auth_all_entregas_finalizadas" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+// Table: entregas_pendentes
+//   Policy "auth_all_entregas_pendentes" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+// Table: ferias
+//   Policy "ferias_delete" (DELETE, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
+//   Policy "ferias_insert" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: ((EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text]))))) OR (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid()))))
+//   Policy "ferias_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: ((EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text]))))) OR (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid()))))
+//   Policy "ferias_update" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: ((EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text]))))) OR (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid()))))
+// Table: funcionarios_rh
+//   Policy "func_all_admin" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
+//   Policy "func_select" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: ((EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text]))))) OR (user_id = auth.uid()))
 // Table: projetos
 //   Policy "authenticated_delete_projetos" (DELETE, PERMISSIVE) roles={authenticated}
 //     USING: true
@@ -756,6 +921,15 @@ export const Constants = {
 //   Policy "authenticated_update_projetos" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
+// Table: separacao_arquivos
+//   Policy "auth_all_separacao_arquivos" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+// Table: separacao_itens
+//   Policy "auth_all_separacao_itens" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
+// Table: separacoes
+//   Policy "auth_all_separacoes" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
 // Table: tabela_precos
 //   Policy "authenticated_delete_precos" (DELETE, PERMISSIVE) roles={authenticated}
 //     USING: true
@@ -766,21 +940,12 @@ export const Constants = {
 //   Policy "authenticated_update_precos" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: true
 //     WITH CHECK: true
+// Table: user_roles
+//   Policy "auth_all_user_roles" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: true
 // Table: usuarios
 //   Policy "Users can select own profile" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: (id = auth.uid())
-
-// --- WARNING: TABLES WITH RLS ENABLED BUT NO POLICIES ---
-// These tables have Row Level Security enabled but NO policies defined.
-// This means ALL queries (SELECT, INSERT, UPDATE, DELETE) will return ZERO rows
-// for non-superuser roles (including the anon and authenticated roles used by the app).
-// You MUST create RLS policies for these tables to allow data access.
-//   - entregas_finalizadas
-//   - entregas_pendentes
-//   - separacao_arquivos
-//   - separacao_itens
-//   - separacoes
-//   - user_roles
 
 // --- DATABASE FUNCTIONS ---
 // FUNCTION handle_new_user()
@@ -801,3 +966,7 @@ export const Constants = {
 //   END;
 //   $function$
 //
+
+// --- INDEXES ---
+// Table: departamentos_rh
+//   CREATE UNIQUE INDEX departamentos_rh_nome_key ON public.departamentos_rh USING btree (nome)

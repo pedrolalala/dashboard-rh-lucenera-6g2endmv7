@@ -15,7 +15,7 @@ const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'Funcionários', url: '/funcionarios', icon: Users },
   { title: 'Férias', url: '/ferias', icon: CalendarDays },
-  { title: 'Folha de Pagamento', url: '/folha', icon: Wallet },
+  { title: 'Folha de Pagamento', url: '/folha-pagamento', icon: Wallet },
   { title: 'Avaliações', url: '/avaliacoes', icon: Star },
   { title: 'Controle de Ponto', url: '/ponto', icon: Clock },
 ]
