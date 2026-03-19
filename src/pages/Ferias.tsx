@@ -93,15 +93,14 @@ export default function Ferias() {
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Gestão de Férias</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl font-light uppercase tracking-widest text-foreground">
+            Gestão de Férias
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             Gerencie solicitações e o calendário de disponibilidade da equipe.
           </p>
         </div>
-        <Button
-          onClick={() => setIsFormOpen(true)}
-          className="bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm"
-        >
+        <Button onClick={() => setIsFormOpen(true)} className="uppercase tracking-widest text-xs">
           <PlusCircle className="mr-2 h-4 w-4" /> Nova Solicitação
         </Button>
       </div>
@@ -112,14 +111,16 @@ export default function Ferias() {
         </div>
 
         <div className="lg:col-span-2 space-y-4">
-          <Card className="shadow-sm border-blue-100/50 h-full flex flex-col">
-            <CardHeader className="pb-3 border-b bg-slate-50/50">
+          <Card className="shadow-none border-border h-full flex flex-col">
+            <CardHeader className="pb-3 border-b border-border bg-transparent">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <CardTitle className="text-lg">Solicitações de Férias</CardTitle>
+                <CardTitle className="text-sm uppercase tracking-widest">
+                  Solicitações de Férias
+                </CardTitle>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   <Select value={deptFilter} onValueChange={setDeptFilter}>
-                    <SelectTrigger className="w-[150px] bg-white">
+                    <SelectTrigger className="w-[150px] bg-transparent">
                       <SelectValue placeholder="Departamento" />
                     </SelectTrigger>
                     <SelectContent>
@@ -132,7 +133,7 @@ export default function Ferias() {
                     </SelectContent>
                   </Select>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[140px] bg-white">
+                    <SelectTrigger className="w-[140px] bg-transparent">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>

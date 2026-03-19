@@ -28,9 +28,9 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  presente: { label: 'Presente', color: 'bg-emerald-100 text-emerald-800 border-transparent' },
-  ausente: { label: 'Ausente', color: 'bg-red-100 text-red-800 border-transparent' },
-  atraso: { label: 'Atraso', color: 'bg-amber-100 text-amber-800 border-transparent' },
+  presente: { label: 'Presente', color: 'bg-foreground text-background border-transparent' },
+  ausente: { label: 'Ausente', color: 'bg-transparent text-destructive border-destructive' },
+  atraso: { label: 'Atraso', color: 'bg-transparent text-muted-foreground border-border' },
 }
 
 export default function Ponto() {
@@ -87,23 +87,25 @@ export default function Ponto() {
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Controle de Ponto</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl font-light uppercase tracking-widest text-foreground">
+            Controle de Ponto
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             Monitore a assiduidade e jornada de trabalho da equipe.
           </p>
         </div>
       </div>
 
-      <Card className="shadow-sm border-blue-100/50">
-        <CardHeader className="pb-3 border-b bg-slate-50/50">
+      <Card className="shadow-none border-border">
+        <CardHeader className="pb-3 border-b border-border bg-transparent">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5 text-secondary" /> Registros de Ponto
+            <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+              <Clock className="h-4 w-4" /> Registros
             </CardTitle>
             <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
               <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
               <Select value={selectedDept} onValueChange={setSelectedDept}>
-                <SelectTrigger className="w-full sm:w-[180px] bg-white">
+                <SelectTrigger className="w-full sm:w-[180px] bg-transparent">
                   <SelectValue placeholder="Departamento" />
                 </SelectTrigger>
                 <SelectContent>
@@ -121,7 +123,7 @@ export default function Ponto() {
                   <Button
                     variant="outline"
                     className={cn(
-                      'w-full sm:w-[260px] justify-start text-left font-normal bg-white',
+                      'w-full sm:w-[260px] justify-start text-left font-normal bg-transparent',
                       !dateRange && 'text-muted-foreground',
                     )}
                   >
@@ -140,7 +142,7 @@ export default function Ponto() {
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
+                <PopoverContent className="w-auto p-0 border-border rounded-none" align="end">
                   <Calendar
                     initialFocus
                     mode="range"
@@ -157,8 +159,8 @@ export default function Ponto() {
         </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader>
-              <TableRow className="bg-slate-50/50">
+            <TableHeader className="bg-muted/10">
+              <TableRow>
                 <TableHead>Colaborador</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Entrada</TableHead>
@@ -176,7 +178,10 @@ export default function Ponto() {
                 </TableRow>
               ) : filteredLogs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-8 text-muted-foreground text-xs uppercase tracking-widest"
+                  >
                     Nenhum registro encontrado para os filtros selecionados.
                   </TableCell>
                 </TableRow>
@@ -184,13 +189,13 @@ export default function Ponto() {
                 filteredLogs.map((log) => {
                   const status = STATUS_CONFIG[log.status] || {
                     label: log.status,
-                    color: 'bg-gray-100 text-gray-800',
+                    color: 'bg-transparent text-muted-foreground border-border',
                   }
                   return (
                     <TableRow key={log.id}>
                       <TableCell className="font-medium">
                         {log.funcionarios_rh?.nome || 'Desconhecido'}
-                        <div className="text-xs text-muted-foreground font-normal">
+                        <div className="text-[10px] text-muted-foreground font-normal uppercase tracking-widest mt-1">
                           {log.funcionarios_rh?.departamentos_rh?.nome}
                         </div>
                       </TableCell>
@@ -205,7 +210,10 @@ export default function Ponto() {
                         {log.total_horas ? Number(log.total_horas).toFixed(2) : '-'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={status.color}>
+                        <Badge
+                          variant="outline"
+                          className={cn(status.color, 'uppercase tracking-widest text-[10px]')}
+                        >
                           {status.label}
                         </Badge>
                       </TableCell>

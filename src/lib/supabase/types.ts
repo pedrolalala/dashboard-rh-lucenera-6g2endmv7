@@ -1115,8 +1115,13 @@ export const Constants = {
 // Table: funcionarios_rh
 //   Policy "func_all_admin" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
+//   Policy "func_insert_admin_explicit" (INSERT, PERMISSIVE) roles={authenticated}
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = 'admin'::text))))
 //   Policy "func_select" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: ((EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text]))))) OR (user_id = auth.uid()))
+//   Policy "func_update_admin_explicit" (UPDATE, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = 'admin'::text))))
+//     WITH CHECK: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = 'admin'::text))))
 // Table: projetos
 //   Policy "authenticated_delete_projetos" (DELETE, PERMISSIVE) roles={authenticated}
 //     USING: true

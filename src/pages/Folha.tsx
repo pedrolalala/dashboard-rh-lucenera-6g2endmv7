@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Calculator, Loader2, Search, Download } from 'lucide-react'
+import { Calculator, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,7 +20,6 @@ import {
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
-import { Badge } from '@/components/ui/badge'
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => ({
   value: String(i + 1),
@@ -124,21 +123,23 @@ export default function FolhaPagamento() {
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Folha de Pagamento</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl font-light uppercase tracking-widest text-foreground">
+            Folha de Pagamento
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             Gerencie os holerites e cálculos salariais mensais.
           </p>
         </div>
       </div>
 
       {canGenerate && (
-        <Card className="shadow-sm border-blue-100/50">
-          <CardHeader className="bg-slate-50/50 border-b pb-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-secondary" /> Nova Geração de Folha
+        <Card className="shadow-none border-border">
+          <CardHeader className="bg-transparent border-b border-border pb-4">
+            <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+              <Calculator className="h-4 w-4" /> Nova Geração de Folha
             </CardTitle>
             <CardDescription>
-              Calcule os salários base, descontos de INSS/IR e adicionais automaticamente.
+              Calcule os salários base, descontos e adicionais automaticamente.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-4">
@@ -169,7 +170,7 @@ export default function FolhaPagamento() {
             <Button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="w-full sm:w-auto bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+              className="w-full sm:w-auto uppercase tracking-widest text-xs"
             >
               {isGenerating ? (
                 <>
@@ -183,10 +184,10 @@ export default function FolhaPagamento() {
         </Card>
       )}
 
-      <Card className="shadow-sm border-blue-100/50">
-        <CardHeader className="pb-3 border-b">
+      <Card className="shadow-none border-border">
+        <CardHeader className="pb-3 border-b border-border bg-transparent">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <CardTitle className="text-lg">Registros Salariais</CardTitle>
+            <CardTitle className="text-sm uppercase tracking-widest">Registros Salariais</CardTitle>
             <div className="flex items-center gap-2">
               <Select value={filterMonth} onValueChange={setFilterMonth}>
                 <SelectTrigger className="w-[140px]">
@@ -218,7 +219,7 @@ export default function FolhaPagamento() {
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-50/50">
+              <TableRow className="bg-muted/10">
                 <TableHead>Funcionário</TableHead>
                 <TableHead>Salário Base</TableHead>
                 <TableHead>Descontos (INSS/IR)</TableHead>
@@ -235,7 +236,10 @@ export default function FolhaPagamento() {
                 </TableRow>
               ) : payrolls.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-8 text-muted-foreground text-xs uppercase tracking-widest"
+                  >
                     Nenhum registro encontrado para o período selecionado.
                   </TableCell>
                 </TableRow>
@@ -246,13 +250,13 @@ export default function FolhaPagamento() {
                       {p.funcionarios_rh?.nome || 'Desconhecido'}
                     </TableCell>
                     <TableCell>{formatBRL(p.salario_base)}</TableCell>
-                    <TableCell className="text-red-600 font-medium">
+                    <TableCell className="text-muted-foreground">
                       -{formatBRL(p.descontos)}
                     </TableCell>
-                    <TableCell className="text-emerald-600 font-medium">
+                    <TableCell className="text-muted-foreground">
                       +{formatBRL(p.adicionais)}
                     </TableCell>
-                    <TableCell className="text-right font-bold text-primary">
+                    <TableCell className="text-right font-bold text-foreground">
                       {formatBRL(p.salario_liquido)}
                     </TableCell>
                   </TableRow>

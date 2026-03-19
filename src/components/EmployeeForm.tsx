@@ -74,7 +74,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
       name={name}
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{label}</FormLabel>
+          <FormLabel className="uppercase text-[10px] tracking-widest">{label}</FormLabel>
           <FormControl>
             <Input type={type} placeholder={placeholder} {...field} />
           </FormControl>
@@ -98,7 +98,9 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
             name="departmentId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Departamento *</FormLabel>
+                <FormLabel className="uppercase text-[10px] tracking-widest">
+                  Departamento *
+                </FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -124,9 +126,11 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           control={form.control}
           name="status"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-slate-50/50">
+            <FormItem className="flex flex-row items-center justify-between border-border border p-3 bg-muted/10">
               <div className="space-y-0.5">
-                <FormLabel>Status Ativo</FormLabel>
+                <FormLabel className="uppercase text-[10px] tracking-widest">
+                  Status Ativo
+                </FormLabel>
                 <p className="text-xs text-muted-foreground">
                   Desative para suspender o acesso do colaborador.
                 </p>
@@ -140,12 +144,17 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
             </FormItem>
           )}
         />
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="uppercase text-[10px] tracking-widest"
+          >
             Cancelar
           </Button>
-          <Button type="submit" className="bg-secondary text-secondary-foreground">
-            {employee ? 'Salvar Alterações' : 'Criar Colaborador'}
+          <Button type="submit" className="uppercase text-[10px] tracking-widest">
+            {employee ? 'Salvar' : 'Criar'}
           </Button>
         </div>
       </form>

@@ -1,14 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  Users,
-  CalendarDays,
-  Wallet,
-  Star,
-  Clock,
-  Building2,
-  FileText,
-} from 'lucide-react'
+import { LayoutDashboard, Users, CalendarDays, Wallet, Star, Clock, FileText } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -35,13 +26,13 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-2">
-          <div className="bg-primary-foreground text-primary p-1.5 rounded-md">
-            <Building2 className="size-5" />
-          </div>
-          <span className="font-bold text-lg tracking-tight text-sidebar-primary-foreground">
-            Lucenera
+      <SidebarHeader className="p-6 border-b border-sidebar-border bg-sidebar">
+        <div className="flex flex-col items-start px-2 py-2">
+          <span className="font-light text-2xl tracking-[0.25em] text-sidebar-primary-foreground leading-none">
+            LUCE
+          </span>
+          <span className="font-bold text-2xl tracking-[0.25em] text-sidebar-primary-foreground leading-none">
+            NERA
           </span>
         </div>
       </SidebarHeader>
@@ -56,7 +47,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
                       <Link to={item.url} className="flex items-center gap-3">
                         <item.icon className="size-4" />
-                        <span>{item.title}</span>
+                        <span className="uppercase text-xs tracking-wider">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -9,7 +9,7 @@ export default function Layout() {
       <AppSidebar />
       <SidebarInset className="flex flex-col h-screen overflow-hidden">
         <TopHeader />
-        <main className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+        <main className="flex-1 overflow-y-auto p-6 bg-background text-foreground">
           <div className="mx-auto max-w-7xl animate-fade-in-up">
             <Outlet />
           </div>

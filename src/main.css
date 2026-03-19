@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,92 +6,89 @@
 
 @layer base {
   :root {
-    /* Lucenera Brand Colors */
-    --background: 210 40% 98%; /* #F8FAFC */
-    --foreground: 210 100% 15%; /* Dark Blue Text */
+    /* Lucenera Minimalist Monochrome Brand */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 210 100% 15%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 100% 15%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Primary Blue: #003366 */
-    --primary: 210 100% 20%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 8%;
 
-    /* Secondary Blue: #007BFF */
-    --secondary: 211 100% 50%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
 
-    /* Accent: Soft Blue #E0F2FE */
-    --accent: 204 100% 94%;
-    --accent-foreground: 210 100% 20%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 40.6%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 211 100% 50%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 98%;
 
-    --radius: 0.5rem;
+    --radius: 0rem;
 
-    /* Sidebar - Deep Navy */
-    --sidebar-background: 210 100% 20%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 211 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 100% 30%; /* Lighter navy for hover */
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 210 100% 15%;
-    --sidebar-ring: 211 100% 50%;
+    /* Sidebar - Black */
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 0% 98%;
 
-    /* Chart colors - Blues & Teals */
-    --chart-1: 211 100% 50%; /* Vibrant Blue */
-    --chart-2: 210 100% 35%; /* Medium Navy */
-    --chart-3: 199 89% 48%; /* Teal */
-    --chart-4: 204 100% 70%; /* Light Blue */
-    --chart-5: 215 25% 65%; /* Slate Blue */
+    /* Chart colors - Greyscale */
+    --chart-1: 0 0% 90%;
+    --chart-2: 0 0% 70%;
+    --chart-3: 0 0% 50%;
+    --chart-4: 0 0% 30%;
+    --chart-5: 0 0% 20%;
   }
 
   .dark {
-    /* Kept mostly standard dark, but tinting with blue */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 211 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 100% 20%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 222.2 84% 10%;
-    --muted-foreground: 215.4 16.3% 66.9%;
-    --accent: 210 100% 20%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 210 100% 20%;
-    --input: 210 100% 20%;
-    --ring: 211 100% 50%;
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 211 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 100% 20%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 210 100% 15%;
-    --sidebar-ring: 211 100% 50%;
-    --chart-1: 211 100% 50%;
-    --chart-2: 210 100% 65%;
-    --chart-3: 199 89% 48%;
-    --chart-4: 204 100% 40%;
-    --chart-5: 215 25% 45%;
+    /* Ensure dark theme forces the same monochrome look */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 8%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 40.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 98%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 0% 98%;
+    --chart-1: 0 0% 90%;
+    --chart-2: 0 0% 70%;
+    --chart-3: 0 0% 50%;
+    --chart-4: 0 0% 30%;
+    --chart-5: 0 0% 20%;
   }
 
   * {

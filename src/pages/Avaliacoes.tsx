@@ -29,14 +29,12 @@ export default function Avaliacoes() {
   const canEdit = user?.app_role === 'admin' || user?.app_role === 'gerente'
 
   const fetchData = async () => {
-    // Fetch Employees for form
     const { data: empData } = await supabase
       .from('funcionarios_rh')
       .select('id, nome')
       .eq('status', 'Ativo')
     if (empData) setEmployees(empData)
 
-    // Fetch Evaluations
     let query = supabase
       .from('avaliacoes')
       .select('*, funcionarios_rh(nome), usuarios(nome)')
@@ -86,63 +84,64 @@ export default function Avaliacoes() {
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">
+          <h1 className="text-2xl font-light uppercase tracking-widest text-foreground">
             Avaliações de Desempenho
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm">
             Acompanhe a produtividade e qualidade do time.
           </p>
         </div>
         {canEdit && (
-          <Button
-            onClick={() => setIsFormOpen(true)}
-            className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
-          >
+          <Button onClick={() => setIsFormOpen(true)} className="uppercase tracking-widest text-xs">
             <PlusCircle className="mr-2 h-4 w-4" /> Nova Avaliação
           </Button>
         )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="shadow-sm border-blue-100/50 bg-primary text-primary-foreground">
+        <Card className="shadow-none rounded-none border-border bg-foreground text-background">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-primary-foreground/80">
+            <CardTitle className="text-[10px] uppercase tracking-widest text-background/70">
               Nota Média Geral
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-2">
-              <div className="text-4xl font-bold">{overallAvg}</div>
-              <div className="text-sm pb-1 text-emerald-400 flex items-center">
-                <TrendingUp className="mr-1 h-3 w-3" /> Atualizado
+              <div className="text-5xl font-light">{overallAvg}</div>
+              <div className="text-xs pb-1 text-background/90 flex items-center tracking-widest">
+                <TrendingUp className="mr-1 h-3 w-3" /> ATUAL
               </div>
             </div>
-            <div className="mt-4 flex gap-1 text-yellow-400">
+            <div className="mt-4 flex gap-1">
               {[1, 2, 3, 4, 5].map((n) => (
                 <Star
                   key={n}
-                  className={`size-5 ${n <= Math.round(Number(overallAvg)) ? 'fill-current' : 'text-primary-foreground/30'}`}
+                  className={`size-5 ${n <= Math.round(Number(overallAvg)) ? 'fill-background text-background' : 'text-background/30'}`}
                 />
               ))}
             </div>
           </CardContent>
         </Card>
-        <Card className="shadow-sm border-blue-100/50 col-span-2">
+        <Card className="shadow-none rounded-none border-border col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Target className="h-4 w-4 text-secondary" /> Visão Resumida
+            <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              <Target className="h-4 w-4" /> Visão Resumida
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-8 mt-4">
+            <div className="flex items-center gap-12 mt-4">
               <div>
-                <p className="text-sm text-muted-foreground">Total Avaliações</p>
-                <p className="text-2xl font-bold text-primary">{evaluations.length}</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                  Total Avaliações
+                </p>
+                <p className="text-3xl font-light text-foreground">{evaluations.length}</p>
               </div>
-              <div className="h-10 w-px bg-border"></div>
+              <div className="h-12 w-px bg-border"></div>
               <div>
-                <p className="text-sm text-muted-foreground">Último Registro</p>
-                <p className="text-lg font-medium text-primary">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                  Último Registro
+                </p>
+                <p className="text-xl font-light text-foreground">
                   {evaluations[0]
                     ? new Date(evaluations[0].data_avaliacao).toLocaleDateString('pt-BR')
                     : '-'}
@@ -153,11 +152,11 @@ export default function Avaliacoes() {
         </Card>
       </div>
 
-      <Card className="shadow-sm border-blue-100/50">
-        <CardHeader className="border-b bg-slate-50/50 pb-4">
+      <Card className="shadow-none rounded-none border-border">
+        <CardHeader className="border-b border-border bg-transparent pb-4">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <div>
-              <CardTitle className="text-lg">Histórico de Avaliações</CardTitle>
+              <CardTitle className="text-sm uppercase tracking-widest">Histórico</CardTitle>
               <CardDescription>Consulte os registros completos.</CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -165,7 +164,7 @@ export default function Avaliacoes() {
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar funcionário..."
-                  className="pl-9 bg-white"
+                  className="pl-9 bg-transparent"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -176,7 +175,7 @@ export default function Avaliacoes() {
                   type="date"
                   value={dateFilterStart}
                   onChange={(e) => setDateFilterStart(e.target.value)}
-                  className="bg-white max-w-[140px] text-sm"
+                  className="bg-transparent max-w-[140px] text-sm"
                   title="Data Inicial"
                 />
                 <span className="text-muted-foreground">-</span>
@@ -184,7 +183,7 @@ export default function Avaliacoes() {
                   type="date"
                   value={dateFilterEnd}
                   onChange={(e) => setDateFilterEnd(e.target.value)}
-                  className="bg-white max-w-[140px] text-sm"
+                  className="bg-transparent max-w-[140px] text-sm"
                   title="Data Final"
                 />
               </div>
@@ -199,7 +198,7 @@ export default function Avaliacoes() {
       <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
         <SheetContent className="w-full sm:max-w-[540px] overflow-y-auto">
           <SheetHeader className="mb-6">
-            <SheetTitle>Nova Avaliação de Desempenho</SheetTitle>
+            <SheetTitle className="uppercase tracking-widest font-light">Nova Avaliação</SheetTitle>
             <SheetDescription>
               Preencha os critérios abaixo para registrar a performance do colaborador.
             </SheetDescription>

@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2 } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -28,41 +27,57 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
-        <CardHeader className="space-y-2 text-center pb-6">
-          <div className="flex justify-center mb-4">
-            <div className="bg-primary/10 text-primary p-3 rounded-xl">
-              <Building2 className="size-8" />
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md shadow-none border border-border bg-card">
+        <CardHeader className="space-y-4 text-center pb-8 pt-8">
+          <div className="flex flex-col items-center justify-center mb-2">
+            <span className="font-light text-5xl tracking-[0.2em] text-foreground leading-none">
+              LUCE
+            </span>
+            <span className="font-bold text-5xl tracking-[0.2em] text-foreground leading-none">
+              NERA
+            </span>
           </div>
-          <CardTitle className="text-2xl font-bold">Lucenera RH</CardTitle>
-          <CardDescription>Faça login para acessar o painel gerencial</CardDescription>
+          <CardDescription className="uppercase tracking-widest text-xs mt-4">
+            Painel Gerencial RH
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">{error}</div>}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-3 text-sm text-destructive-foreground bg-destructive">{error}</div>
+            )}
             <div className="space-y-2">
-              <label className="text-sm font-medium">E-mail</label>
+              <label className="text-xs uppercase tracking-widest text-muted-foreground">
+                E-mail
+              </label>
               <Input
                 type="email"
                 placeholder="admin@lucenera.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="border-border"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Senha</label>
+              <label className="text-xs uppercase tracking-widest text-muted-foreground">
+                Senha
+              </label>
               <Input
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                className="border-border"
               />
             </div>
-            <Button type="submit" className="w-full h-11" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full h-12 uppercase tracking-widest text-xs"
+              disabled={loading}
+            >
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>

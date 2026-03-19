@@ -2,7 +2,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Bell, Search, LogOut } from 'lucide-react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -17,9 +16,10 @@ const routeNames: Record<string, string> = {
   '/': 'Visão Gerencial',
   '/funcionarios': 'Funcionários',
   '/ferias': 'Férias',
-  '/folha': 'Folha de Pagamento',
+  '/folha-pagamento': 'Folha de Pagamento',
   '/avaliacoes': 'Avaliações de Desempenho',
-  '/ponto': 'Controle de Ponto',
+  '/controle-ponto': 'Controle de Ponto',
+  '/relatorios': 'Relatórios',
 }
 
 export function TopHeader() {
@@ -34,17 +34,24 @@ export function TopHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-6 shadow-sm">
+    <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-4 border-b border-border bg-background px-6">
       <SidebarTrigger />
 
       <Breadcrumb className="hidden md:flex">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/">Dashboard RH</BreadcrumbLink>
+            <BreadcrumbLink
+              href="/"
+              className="uppercase text-[10px] tracking-widest text-muted-foreground hover:text-foreground"
+            >
+              Dashboard RH
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage className="font-medium">{pageName}</BreadcrumbPage>
+            <BreadcrumbPage className="font-medium uppercase text-[10px] tracking-widest text-foreground">
+              {pageName}
+            </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -55,25 +62,27 @@ export function TopHeader() {
           <Input
             type="search"
             placeholder="Buscar colaborador..."
-            className="w-64 rounded-full bg-muted pl-9 focus-visible:ring-secondary"
+            className="w-64 bg-background pl-9 focus-visible:ring-primary border-border"
           />
         </div>
 
         <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
           <Bell className="size-5" />
-          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-secondary ring-2 ring-background" />
+          <span className="absolute top-1.5 right-1.5 size-2 bg-foreground ring-2 ring-background" />
         </button>
 
-        <div className="flex items-center gap-3 pl-2 border-l">
+        <div className="flex items-center gap-3 pl-4 border-l border-border">
           <div className="hidden md:flex flex-col text-right">
-            <span className="text-sm font-semibold text-foreground leading-none">
+            <span className="text-xs font-semibold text-foreground leading-none uppercase tracking-widest">
               {user?.user_metadata?.name || user?.email?.split('@')[0]}
             </span>
-            <span className="text-xs text-muted-foreground capitalize">{user?.app_role}</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
+              {user?.app_role}
+            </span>
           </div>
           <button
             onClick={handleLogout}
-            className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
             title="Sair"
           >
             <LogOut className="size-5" />

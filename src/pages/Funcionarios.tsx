@@ -104,7 +104,7 @@ export default function Funcionarios() {
   if (user && !user.app_role) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-foreground" />
       </div>
     )
   }
@@ -113,12 +113,14 @@ export default function Funcionarios() {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-4 animate-fade-in-up">
         <ShieldAlert className="h-16 w-16 text-destructive" />
-        <h2 className="text-2xl font-bold">Acesso Negado</h2>
-        <p className="text-muted-foreground max-w-md text-center">
+        <h2 className="text-xl font-light uppercase tracking-widest text-foreground">
+          Acesso Negado
+        </h2>
+        <p className="text-muted-foreground max-w-md text-center text-sm">
           Apenas usuários com perfil de administrador têm permissão para acessar e gerenciar o
           quadro de funcionários.
         </p>
-        <Button onClick={() => navigate('/')} className="mt-4">
+        <Button onClick={() => navigate('/')} className="mt-4 uppercase tracking-widest text-xs">
           Voltar para o Início
         </Button>
       </div>
@@ -195,27 +197,26 @@ export default function Funcionarios() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-primary">Quadro de Funcionários</h1>
+          <h1 className="text-2xl font-light uppercase tracking-widest text-foreground">
+            Quadro de Funcionários
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie os registros de todos os colaboradores da empresa.
+            Gerencie os registros de todos os colaboradores.
           </p>
         </div>
-        <Button
-          onClick={handleCreate}
-          className="bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm"
-        >
+        <Button onClick={handleCreate} className="uppercase tracking-widest text-xs">
           <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Colaborador
         </Button>
       </div>
 
-      <Card className="shadow-sm border-blue-100/50">
+      <Card className="shadow-none border-border">
         <CardContent className="p-0">
-          <div className="flex flex-col sm:flex-row items-center justify-between p-4 gap-4 border-b bg-slate-50/50">
+          <div className="flex flex-col sm:flex-row items-center justify-between p-4 gap-4 border-b border-border bg-transparent">
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome..."
-                className="pl-9 bg-white"
+                className="pl-9 bg-transparent"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -223,7 +224,7 @@ export default function Funcionarios() {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select value={deptFilter} onValueChange={setDeptFilter}>
-                <SelectTrigger className="w-[200px] bg-white">
+                <SelectTrigger className="w-[200px] bg-transparent">
                   <SelectValue placeholder="Departamento" />
                 </SelectTrigger>
                 <SelectContent>
@@ -251,7 +252,9 @@ export default function Funcionarios() {
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="w-full sm:max-w-[540px] overflow-y-auto">
           <SheetHeader className="mb-6">
-            <SheetTitle>{editingEmp ? 'Editar Funcionário' : 'Novo Funcionário'}</SheetTitle>
+            <SheetTitle className="uppercase tracking-widest font-light">
+              {editingEmp ? 'Editar Funcionário' : 'Novo Funcionário'}
+            </SheetTitle>
             <SheetDescription>
               {editingEmp
                 ? 'Atualize as informações do colaborador abaixo.'
@@ -270,17 +273,20 @@ export default function Funcionarios() {
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza que deseja excluir este funcionário?</AlertDialogTitle>
+            <AlertDialogTitle className="uppercase tracking-widest font-light">
+              Excluir Funcionário?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O registro do colaborador será removido
-              permanentemente do sistema.
+              Esta ação não pode ser desfeita. O registro será removido permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="uppercase tracking-widest text-xs">
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 uppercase tracking-widest text-xs"
             >
               Excluir
             </AlertDialogAction>

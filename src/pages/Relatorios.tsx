@@ -76,10 +76,10 @@ function ReportSection({ config, depts, emps, onExport, loadingType }: any) {
   }
 
   return (
-    <Card className="shadow-sm border-blue-100/50">
-      <CardHeader className="pb-3 border-b bg-slate-50/50">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <FileText className="h-5 w-5 text-secondary" /> {config.title}
+    <Card className="shadow-none border-border">
+      <CardHeader className="pb-4 border-b border-border bg-transparent">
+        <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+          <FileText className="h-4 w-4" /> {config.title}
         </CardTitle>
         <CardDescription>{config.desc}</CardDescription>
       </CardHeader>
@@ -145,7 +145,7 @@ function ReportSection({ config, depts, emps, onExport, loadingType }: any) {
               <Button
                 variant="outline"
                 className={cn(
-                  'w-full justify-start text-left font-normal',
+                  'w-full justify-start text-left font-normal bg-transparent',
                   !dateRange && 'text-muted-foreground',
                 )}
               >
@@ -161,7 +161,7 @@ function ReportSection({ config, depts, emps, onExport, loadingType }: any) {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 border-border rounded-none" align="start">
               <Calendar
                 initialFocus
                 mode="range"
@@ -177,7 +177,7 @@ function ReportSection({ config, depts, emps, onExport, loadingType }: any) {
           <Button
             onClick={() => handleExport('pdf')}
             disabled={!!loadingType}
-            className="flex-1"
+            className="flex-1 uppercase tracking-widest text-xs"
             variant="default"
           >
             {loadingType === `${config.id}-pdf` ? (
@@ -190,7 +190,8 @@ function ReportSection({ config, depts, emps, onExport, loadingType }: any) {
           <Button
             onClick={() => handleExport('csv')}
             disabled={!!loadingType}
-            className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+            className="flex-1 uppercase tracking-widest text-xs"
+            variant="outline"
           >
             {loadingType === `${config.id}-csv` ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -225,7 +226,7 @@ export default function Relatorios() {
 
   if (user?.app_role !== 'admin' && user?.app_role !== 'gerente') {
     return (
-      <div className="p-8 text-center text-muted-foreground">
+      <div className="p-8 text-center text-muted-foreground uppercase tracking-widest text-xs">
         Acesso restrito a administradores e gerentes.
       </div>
     )
@@ -274,8 +275,10 @@ export default function Relatorios() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-primary">Relatórios e Exportações</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl font-light uppercase tracking-widest text-foreground">
+          Relatórios e Exportações
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Gere e faça o download de documentos consolidados em PDF ou CSV.
         </p>
       </div>

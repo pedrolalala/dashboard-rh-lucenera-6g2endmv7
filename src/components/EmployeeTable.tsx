@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 interface EmployeeTableProps {
   data: Employee[]
@@ -21,7 +21,7 @@ interface EmployeeTableProps {
 export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
   return (
     <Table>
-      <TableHeader className="bg-slate-50/50">
+      <TableHeader className="bg-muted/10">
         <TableRow>
           <TableHead>Colaborador</TableHead>
           <TableHead>Contato</TableHead>
@@ -34,7 +34,10 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
       <TableBody>
         {data.length === 0 && (
           <TableRow>
-            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+            <TableCell
+              colSpan={6}
+              className="h-24 text-center text-muted-foreground uppercase tracking-widest text-xs"
+            >
               Nenhum colaborador encontrado.
             </TableCell>
           </TableRow>
@@ -43,9 +46,10 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
           <TableRow key={emp.id} className="group">
             <TableCell className="font-medium">
               <div className="flex items-center gap-3">
-                <Avatar className="size-8">
-                  <AvatarImage src={`https://img.usecurling.com/ppl/thumbnail?seed=${emp.id}`} />
-                  <AvatarFallback>{emp.name.substring(0, 2)}</AvatarFallback>
+                <Avatar className="size-8 border border-border">
+                  <AvatarFallback className="bg-muted text-foreground font-medium text-xs">
+                    {emp.name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <span>{emp.name}</span>
               </div>
@@ -60,11 +64,11 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
             <TableCell>{emp.role || '-'}</TableCell>
             <TableCell>
               <Badge
-                variant={emp.status === 'Ativo' ? 'default' : 'secondary'}
+                variant={emp.status === 'Ativo' ? 'default' : 'outline'}
                 className={
                   emp.status === 'Ativo'
-                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-transparent'
-                    : 'bg-slate-100 text-slate-600 border-transparent'
+                    ? 'bg-foreground text-background hover:bg-foreground/90 uppercase tracking-widest text-[10px]'
+                    : 'bg-transparent text-muted-foreground border-border uppercase tracking-widest text-[10px]'
                 }
               >
                 {emp.status}
@@ -73,7 +77,7 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
             <TableCell className="text-right">
               <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button variant="ghost" size="icon" onClick={() => onEdit(emp)} title="Editar">
-                  <Edit2 className="h-4 w-4 text-secondary" />
+                  <Edit2 className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                 </Button>
                 <Button
                   variant="ghost"
