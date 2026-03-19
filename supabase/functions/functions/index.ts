@@ -1,6 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-const corsHeaders = {
+export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers':
@@ -12,7 +12,7 @@ Deno.serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  return new Response(JSON.stringify({ message: 'Functions edge function is working!' }), {
+  return new Response(JSON.stringify({ message: 'Edge function is running' }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     status: 200,
   })
