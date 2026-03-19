@@ -66,6 +66,47 @@ export type Database = {
           },
         ]
       }
+      controle_ponto: {
+        Row: {
+          created_at: string
+          data: string
+          funcionario_id: string
+          hora_entrada: string | null
+          hora_saida: string | null
+          id: string
+          status: string | null
+          total_horas: number | null
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          funcionario_id: string
+          hora_entrada?: string | null
+          hora_saida?: string | null
+          id?: string
+          status?: string | null
+          total_horas?: number | null
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          funcionario_id?: string
+          hora_entrada?: string | null
+          hora_saida?: string | null
+          id?: string
+          status?: string | null
+          total_horas?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'controle_ponto_funcionario_id_fkey'
+            columns: ['funcionario_id']
+            isOneToOne: false
+            referencedRelation: 'funcionarios_rh'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       departamentos_rh: {
         Row: {
           id: string
@@ -822,6 +863,15 @@ export const Constants = {
 //   comentarios: text (nullable)
 //   data_avaliacao: timestamp with time zone (not null, default: now())
 //   avaliador_id: uuid (not null)
+// Table: controle_ponto
+//   id: uuid (not null, default: gen_random_uuid())
+//   funcionario_id: uuid (not null)
+//   data: date (not null)
+//   hora_entrada: time without time zone (nullable)
+//   hora_saida: time without time zone (nullable)
+//   total_horas: numeric (nullable)
+//   status: text (nullable)
+//   created_at: timestamp with time zone (not null, default: now())
 // Table: departamentos_rh
 //   id: uuid (not null, default: gen_random_uuid())
 //   nome: text (not null)
@@ -997,6 +1047,10 @@ export const Constants = {
 //   CHECK avaliacoes_produtividade_check: CHECK (((produtividade >= 1) AND (produtividade <= 5)))
 //   CHECK avaliacoes_qualidade_check: CHECK (((qualidade >= 1) AND (qualidade <= 5)))
 //   CHECK avaliacoes_trabalho_equipe_check: CHECK (((trabalho_equipe >= 1) AND (trabalho_equipe <= 5)))
+// Table: controle_ponto
+//   FOREIGN KEY controle_ponto_funcionario_id_fkey: FOREIGN KEY (funcionario_id) REFERENCES funcionarios_rh(id) ON DELETE CASCADE
+//   PRIMARY KEY controle_ponto_pkey: PRIMARY KEY (id)
+//   CHECK controle_ponto_status_check: CHECK ((status = ANY (ARRAY['presente'::text, 'ausente'::text, 'atraso'::text])))
 // Table: departamentos_rh
 //   UNIQUE departamentos_rh_nome_key: UNIQUE (nome)
 //   PRIMARY KEY departamentos_rh_pkey: PRIMARY KEY (id)
@@ -1025,6 +1079,13 @@ export const Constants = {
 //   Policy "auth_all_admin_gerente_avaliacoes" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
 //   Policy "auth_select_func_avaliacoes" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid())))
+// Table: controle_ponto
+//   Policy "ponto_all_admin" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
+//   Policy "ponto_select_admin" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
+//   Policy "ponto_select_own" (SELECT, PERMISSIVE) roles={authenticated}
 //     USING: (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid())))
 // Table: departamentos_rh
 //   Policy "dept_all_admin" (ALL, PERMISSIVE) roles={authenticated}

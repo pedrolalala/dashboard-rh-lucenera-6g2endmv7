@@ -11,6 +11,7 @@ import Ferias from './pages/Ferias'
 import FolhaPagamento from './pages/Folha'
 import Avaliacoes from './pages/Avaliacoes'
 import Ponto from './pages/Ponto'
+import Relatorios from './pages/Relatorios'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/folha-pagamento" element={<FolhaPagamento />} />
               <Route path="/avaliacoes" element={<Avaliacoes />} />
               <Route path="/controle-ponto" element={<Ponto />} />
+              <Route path="/relatorios" element={<Relatorios />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />

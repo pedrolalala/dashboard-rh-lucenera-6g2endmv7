@@ -1,6 +1,7 @@
 {
   "_versions": {
     "chat-consulta": 6,
-    "sync-sharepoint": 9
+    "sync-sharepoint": 9,
+    "generate-report": 1
   }
 }

@@ -1,5 +1,14 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, CalendarDays, Wallet, Star, Clock, Building2 } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Users,
+  CalendarDays,
+  Wallet,
+  Star,
+  Clock,
+  Building2,
+  FileText,
+} from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +27,7 @@ const navItems = [
   { title: 'Folha de Pagamento', url: '/folha-pagamento', icon: Wallet },
   { title: 'Avaliações', url: '/avaliacoes', icon: Star },
   { title: 'Controle de Ponto', url: '/controle-ponto', icon: Clock },
+  { title: 'Relatórios', url: '/relatorios', icon: FileText },
 ]
 
 export function AppSidebar() {
