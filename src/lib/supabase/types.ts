@@ -197,6 +197,50 @@ export type Database = {
           },
         ]
       }
+      folha_pagamento: {
+        Row: {
+          adicionais: number
+          ano: number
+          data_geracao: string
+          descontos: number
+          funcionario_id: string
+          id: string
+          mes: number
+          salario_base: number
+          salario_liquido: number
+        }
+        Insert: {
+          adicionais: number
+          ano: number
+          data_geracao?: string
+          descontos: number
+          funcionario_id: string
+          id?: string
+          mes: number
+          salario_base: number
+          salario_liquido: number
+        }
+        Update: {
+          adicionais?: number
+          ano?: number
+          data_geracao?: string
+          descontos?: number
+          funcionario_id?: string
+          id?: string
+          mes?: number
+          salario_base?: number
+          salario_liquido?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'folha_pagamento_funcionario_id_fkey'
+            columns: ['funcionario_id']
+            isOneToOne: false
+            referencedRelation: 'funcionarios_rh'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       funcionarios_rh: {
         Row: {
           cargo: string | null
@@ -761,6 +805,16 @@ export const Constants = {
 //   dias: integer (not null)
 //   status: text (nullable, default: 'Pendente'::text)
 //   data_solicitacao: timestamp with time zone (not null, default: now())
+// Table: folha_pagamento
+//   id: uuid (not null, default: gen_random_uuid())
+//   funcionario_id: uuid (not null)
+//   mes: integer (not null)
+//   ano: integer (not null)
+//   salario_base: numeric (not null)
+//   descontos: numeric (not null)
+//   adicionais: numeric (not null)
+//   salario_liquido: numeric (not null)
+//   data_geracao: timestamp with time zone (not null, default: now())
 // Table: funcionarios_rh
 //   id: uuid (not null, default: gen_random_uuid())
 //   nome: text (not null)
@@ -872,6 +926,10 @@ export const Constants = {
 // Table: ferias
 //   FOREIGN KEY ferias_funcionario_id_fkey: FOREIGN KEY (funcionario_id) REFERENCES funcionarios_rh(id) ON DELETE CASCADE
 //   PRIMARY KEY ferias_pkey: PRIMARY KEY (id)
+// Table: folha_pagamento
+//   FOREIGN KEY folha_pagamento_funcionario_id_fkey: FOREIGN KEY (funcionario_id) REFERENCES funcionarios_rh(id) ON DELETE CASCADE
+//   CHECK folha_pagamento_mes_check: CHECK (((mes >= 1) AND (mes <= 12)))
+//   PRIMARY KEY folha_pagamento_pkey: PRIMARY KEY (id)
 // Table: funcionarios_rh
 //   FOREIGN KEY funcionarios_rh_departamento_id_fkey: FOREIGN KEY (departamento_id) REFERENCES departamentos_rh(id)
 //   PRIMARY KEY funcionarios_rh_pkey: PRIMARY KEY (id)
@@ -906,6 +964,11 @@ export const Constants = {
 //     USING: ((EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text]))))) OR (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid()))))
 //   Policy "ferias_update" (UPDATE, PERMISSIVE) roles={authenticated}
 //     USING: ((EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text]))))) OR (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid()))))
+// Table: folha_pagamento
+//   Policy "folha_all_admin_gerente" (ALL, PERMISSIVE) roles={authenticated}
+//     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
+//   Policy "folha_select_own" (SELECT, PERMISSIVE) roles={authenticated}
+//     USING: (funcionario_id IN ( SELECT funcionarios_rh.id    FROM funcionarios_rh   WHERE (funcionarios_rh.user_id = auth.uid())))
 // Table: funcionarios_rh
 //   Policy "func_all_admin" (ALL, PERMISSIVE) roles={authenticated}
 //     USING: (EXISTS ( SELECT 1    FROM usuarios   WHERE ((usuarios.id = auth.uid()) AND (usuarios.role = ANY (ARRAY['admin'::text, 'gerente'::text])))))
