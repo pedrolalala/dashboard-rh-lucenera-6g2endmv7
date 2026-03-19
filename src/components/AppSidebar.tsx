@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Users, Calendar, LayoutDashboard, Settings, LogOut, Briefcase } from 'lucide-react'
+import { Users, Calendar, LayoutDashboard, Settings, LogOut, Briefcase, Clock } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +17,7 @@ import logoImg from '@/assets/logotipo-vertical_v1_preto-9e726.png'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Controle de Ponto', href: '/controle-ponto', icon: Clock },
   { name: 'Funcionários', href: '/funcionarios', icon: Users },
   { name: 'Férias', href: '/ferias', icon: Calendar },
   { name: 'Cargos', href: '/cargos', icon: Briefcase },
