@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/hooks/use-auth'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import logoImg from '@/assets/logotipo-vertical_v1_preto-9e726.png'
 
 export function TopHeader() {
@@ -34,6 +35,7 @@ export function TopHeader() {
         <Button variant="ghost" size="icon" className="text-muted-foreground hidden md:flex">
           <Search className="h-5 w-5" />
         </Button>
+        <ThemeToggle />
         <Button variant="ghost" size="icon" className="text-muted-foreground">
           <Bell className="h-5 w-5" />
         </Button>

@@ -14,6 +14,7 @@ import Ponto from './pages/Ponto'
 import Relatorios from './pages/Relatorios'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './hooks/use-auth'
+import { ThemeProvider } from './components/theme-provider'
 
 const ProtectedRoute = () => {
   const { user, loading } = useAuth()
@@ -30,29 +31,36 @@ const ProtectedRoute = () => {
 }
 
 const App = () => (
-  <AuthProvider>
-    <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<ProtectedRoute />}>
-            <Route element={<Layout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/funcionarios" element={<Funcionarios />} />
-              <Route path="/ferias" element={<Ferias />} />
-              <Route path="/folha-pagamento" element={<FolhaPagamento />} />
-              <Route path="/avaliacoes" element={<Avaliacoes />} />
-              <Route path="/controle-ponto" element={<Ponto />} />
-              <Route path="/relatorios" element={<Relatorios />} />
+  <ThemeProvider
+    attribute="class"
+    defaultTheme="system"
+    enableSystem
+    disableTransitionOnChange={false}
+  >
+    <AuthProvider>
+      <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/funcionarios" element={<Funcionarios />} />
+                <Route path="/ferias" element={<Ferias />} />
+                <Route path="/folha-pagamento" element={<FolhaPagamento />} />
+                <Route path="/avaliacoes" element={<Avaliacoes />} />
+                <Route path="/controle-ponto" element={<Ponto />} />
+                <Route path="/relatorios" element={<Relatorios />} />
+              </Route>
             </Route>
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
-    </BrowserRouter>
-  </AuthProvider>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </BrowserRouter>
+    </AuthProvider>
+  </ThemeProvider>
 )
 
 export default App
