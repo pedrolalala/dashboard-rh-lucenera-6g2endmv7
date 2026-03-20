@@ -37,36 +37,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null)
         setLoading(false)
       } else {
-        setUser(session.user)
+        // Keep existing app_role/funcionario_id if it's the same user to avoid flashing
+        setUser((prev) =>
+          prev?.id === session.user.id
+            ? { ...session.user, app_role: prev.app_role, funcionario_id: prev.funcionario_id }
+            : session.user,
+        )
       }
     })
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      setUser(session?.user ?? null)
-      if (!session?.user) setLoading(false)
+      if (!session?.user) {
+        setUser(null)
+        setLoading(false)
+      } else {
+        setUser(session.user)
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
-    if (user && !user.app_role) {
-      Promise.all([
-        supabase.from('usuarios').select('role').eq('id', user.id).single(),
-        supabase.from('funcionarios_rh').select('id').eq('user_id', user.id).maybeSingle(),
-      ]).then(([roleRes, funcRes]) => {
-        setUser((prev) =>
-          prev
-            ? {
-                ...prev,
-                app_role: roleRes.data?.role || 'funcionario',
-                funcionario_id: funcRes.data?.id,
-              }
-            : null,
-        )
-        setLoading(false)
-      })
+    if (user && user.id && !user.app_role) {
+      let isMounted = true
+
+      const loadData = async () => {
+        const [roleRes, funcRes] = await Promise.all([
+          supabase.from('usuarios').select('role').eq('id', user.id).single(),
+          supabase.from('funcionarios_rh').select('id').eq('user_id', user.id).maybeSingle(),
+        ])
+
+        let funcId = funcRes.data?.id
+
+        // Self-healing mechanism: Se o vínculo falhou por algum motivo (delay de trigger ou legado),
+        // força a vinculação do funcionário via Edge RPC para garantir o acesso ao sistema de ponto
+        if (!funcId) {
+          const { data: newFuncId } = await supabase.rpc('link_my_funcionario_record' as any)
+          if (newFuncId) {
+            funcId = newFuncId
+          }
+        }
+
+        if (isMounted) {
+          setUser((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  app_role: roleRes.data?.role || 'funcionario',
+                  funcionario_id: funcId,
+                }
+              : null,
+          )
+          setLoading(false)
+        }
+      }
+
+      loadData()
+      return () => {
+        isMounted = false
+      }
     }
-  }, [user?.id])
+  }, [user?.id, user?.app_role])
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })

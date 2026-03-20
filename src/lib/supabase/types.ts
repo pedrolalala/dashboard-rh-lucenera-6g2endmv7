@@ -165,7 +165,7 @@ export type Database = {
           endereco: string | null
           fotos_urls: Json | null
           gestora_equipe: string | null
-          id: string | null
+          id: string
           material_conteudo: string | null
           material_tipo: string | null
           numero_entrega: string | null
@@ -186,7 +186,7 @@ export type Database = {
           endereco?: string | null
           fotos_urls?: Json | null
           gestora_equipe?: string | null
-          id?: string | null
+          id: string
           material_conteudo?: string | null
           material_tipo?: string | null
           numero_entrega?: string | null
@@ -207,7 +207,7 @@ export type Database = {
           endereco?: string | null
           fotos_urls?: Json | null
           gestora_equipe?: string | null
-          id?: string | null
+          id?: string
           material_conteudo?: string | null
           material_tipo?: string | null
           numero_entrega?: string | null
@@ -219,7 +219,15 @@ export type Database = {
           telefone?: string | null
           vendedor?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'entregas_finalizadas_separacao_id_fkey'
+            columns: ['separacao_id']
+            isOneToOne: false
+            referencedRelation: 'separacoes'
+            referencedColumns: ['id']
+          },
+        ]
       }
       entregas_pendentes: {
         Row: {
@@ -565,7 +573,7 @@ export type Database = {
           garantia_motivo: string | null
           garantia_peca: string | null
           gestora_equipe: string | null
-          id: string | null
+          id: string
           inclui_garantia: boolean | null
           material_conteudo: string | null
           material_tipo: string | null
@@ -598,7 +606,7 @@ export type Database = {
           garantia_motivo?: string | null
           garantia_peca?: string | null
           gestora_equipe?: string | null
-          id?: string | null
+          id: string
           inclui_garantia?: boolean | null
           material_conteudo?: string | null
           material_tipo?: string | null
@@ -631,7 +639,7 @@ export type Database = {
           garantia_motivo?: string | null
           garantia_peca?: string | null
           gestora_equipe?: string | null
-          id?: string | null
+          id?: string
           inclui_garantia?: boolean | null
           material_conteudo?: string | null
           material_tipo?: string | null
@@ -918,7 +926,7 @@ export const Constants = {
 //   id: uuid (not null, default: gen_random_uuid())
 //   nome: text (not null)
 // Table: entregas_finalizadas
-//   id: text (nullable)
+//   id: text (not null)
 //   separacao_id: text (nullable)
 //   cliente: text (nullable)
 //   codigo_obra: bigint (nullable)
@@ -1026,7 +1034,7 @@ export const Constants = {
 //   local: bigint (nullable)
 //   marca: text (nullable)
 // Table: separacoes
-//   id: text (nullable)
+//   id: text (not null)
 //   cliente: text (nullable)
 //   codigo_obra: bigint (nullable)
 //   data_entrega: text (nullable)
@@ -1098,6 +1106,9 @@ export const Constants = {
 // Table: departamentos_rh
 //   UNIQUE departamentos_rh_nome_key: UNIQUE (nome)
 //   PRIMARY KEY departamentos_rh_pkey: PRIMARY KEY (id)
+// Table: entregas_finalizadas
+//   PRIMARY KEY entregas_finalizadas_pkey: PRIMARY KEY (id)
+//   FOREIGN KEY entregas_finalizadas_separacao_id_fkey: FOREIGN KEY (separacao_id) REFERENCES separacoes(id) ON DELETE SET NULL
 // Table: ferias
 //   FOREIGN KEY ferias_funcionario_id_fkey: FOREIGN KEY (funcionario_id) REFERENCES funcionarios_rh(id) ON DELETE CASCADE
 //   PRIMARY KEY ferias_pkey: PRIMARY KEY (id)
@@ -1111,6 +1122,8 @@ export const Constants = {
 //   FOREIGN KEY funcionarios_rh_user_id_fkey: FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL
 // Table: projetos
 //   PRIMARY KEY projetos_pkey: PRIMARY KEY (id)
+// Table: separacoes
+//   PRIMARY KEY separacoes_pkey: PRIMARY KEY (id)
 // Table: tabela_precos
 //   PRIMARY KEY tabela_precos_pkey: PRIMARY KEY (id)
 // Table: usuarios
