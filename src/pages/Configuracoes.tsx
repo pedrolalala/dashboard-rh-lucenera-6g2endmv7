@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ShieldAlert, Users, Key, UserX, UserCheck, Loader2 } from 'lucide-react'
+import { ShieldAlert, Users, Key, UserX, UserCheck, Loader2, UserPlus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/use-auth'
@@ -33,6 +33,15 @@ export default function Configuracoes() {
   const [loading, setLoading] = useState(true)
   const [passwordDialog, setPasswordDialog] = useState({ open: false, userId: '', userName: '' })
   const [newPassword, setNewPassword] = useState('')
+
+  const [newUserDialog, setNewUserDialog] = useState(false)
+  const [newUserForm, setNewUserForm] = useState({
+    nome: '',
+    email: '',
+    role: 'funcionario',
+    password: '',
+  })
+  const [creatingUser, setCreatingUser] = useState(false)
 
   useEffect(() => {
     if (user?.app_role === 'admin') {
@@ -92,6 +101,28 @@ export default function Configuracoes() {
     }
   }
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCreatingUser(true)
+    try {
+      const { error } = await supabase.rpc('criar_usuario', {
+        p_email: newUserForm.email,
+        p_nome: newUserForm.nome,
+        p_password: newUserForm.password,
+        p_role: newUserForm.role as any,
+      })
+      if (error) throw error
+      toast.success('Usuário criado com sucesso!')
+      setNewUserDialog(false)
+      setNewUserForm({ nome: '', email: '', role: 'funcionario', password: '' })
+      fetchUsuarios()
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao criar usuário')
+    } finally {
+      setCreatingUser(false)
+    }
+  }
+
   if (user?.app_role !== 'admin') {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center space-y-4 animate-fade-in-up">
@@ -120,6 +151,13 @@ export default function Configuracoes() {
             Gestão de acessos e configurações do sistema.
           </p>
         </div>
+        <Button
+          onClick={() => setNewUserDialog(true)}
+          className="uppercase tracking-widest text-xs"
+        >
+          <UserPlus className="mr-2 h-4 w-4" />
+          Novo Usuário
+        </Button>
       </div>
 
       <Card className="shadow-none border-border">
@@ -203,6 +241,84 @@ export default function Configuracoes() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={newUserDialog} onOpenChange={setNewUserDialog}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handleCreateUser}>
+            <DialogHeader>
+              <DialogTitle>Adicionar Novo Usuário</DialogTitle>
+              <DialogDescription>
+                Preencha os dados abaixo para criar um novo acesso.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-nome">Nome</Label>
+                <Input
+                  id="new-nome"
+                  required
+                  value={newUserForm.nome}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, nome: e.target.value })}
+                  placeholder="Nome completo"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-email">E-mail</Label>
+                <Input
+                  id="new-email"
+                  type="email"
+                  required
+                  value={newUserForm.email}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                  placeholder="email@empresa.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-role">Perfil de Acesso</Label>
+                <select
+                  id="new-role"
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={newUserForm.role}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, role: e.target.value })}
+                  required
+                >
+                  <option value="admin">Admin</option>
+                  <option value="gerente">Gerente</option>
+                  <option value="operador">Operador</option>
+                  <option value="funcionario">Funcionário</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-pass">Senha Inicial</Label>
+                <Input
+                  id="new-pass"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={newUserForm.password}
+                  onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setNewUserDialog(false)}
+                disabled={creatingUser}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={creatingUser || newUserForm.password.length < 6}>
+                {creatingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Criar Usuário
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={passwordDialog.open}
