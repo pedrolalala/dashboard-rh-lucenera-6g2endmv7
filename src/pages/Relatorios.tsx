@@ -215,11 +215,11 @@ export default function Relatorios() {
 
   useEffect(() => {
     supabase
-      .from('departamentos_rh')
+      .from('departamentos')
       .select('*')
       .then(({ data }) => data && setDepts(data as any))
     supabase
-      .from('funcionarios_rh')
+      .from('funcionarios')
       .select('id, nome, departamento_id')
       .then(({ data }) => data && setEmps(data as any))
   }, [])

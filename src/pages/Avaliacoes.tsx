@@ -30,14 +30,14 @@ export default function Avaliacoes() {
 
   const fetchData = async () => {
     const { data: empData } = await supabase
-      .from('funcionarios_rh')
+      .from('funcionarios')
       .select('id, nome')
       .eq('status', 'Ativo')
     if (empData) setEmployees(empData)
 
     let query = supabase
       .from('avaliacoes')
-      .select('*, funcionarios_rh(nome), usuarios(nome)')
+      .select('*, funcionarios(nome), usuarios(nome)')
       .order('data_avaliacao', { ascending: false })
 
     if (user?.app_role === 'funcionario' && user?.funcionario_id) {
@@ -54,7 +54,7 @@ export default function Avaliacoes() {
 
   const filteredEvals = useMemo(() => {
     return evaluations.filter((e) => {
-      const matchName = e.funcionarios_rh?.nome.toLowerCase().includes(search.toLowerCase())
+      const matchName = e.funcionarios?.nome.toLowerCase().includes(search.toLowerCase())
       const evalDate = new Date(e.data_avaliacao)
       const matchStart = dateFilterStart ? evalDate >= new Date(dateFilterStart) : true
       const matchEnd = dateFilterEnd ? evalDate <= new Date(dateFilterEnd) : true

@@ -48,7 +48,7 @@ export default function FolhaPagamento() {
     setIsLoading(true)
     const { data, error } = await supabase
       .from('folha_pagamento')
-      .select('*, funcionarios_rh(nome)')
+      .select('*, funcionarios(nome)')
       .eq('mes', Number(filterMonth))
       .eq('ano', Number(filterYear))
       .order('data_geracao', { ascending: false })
@@ -77,7 +77,7 @@ export default function FolhaPagamento() {
       }
 
       const { data: employees } = await supabase
-        .from('funcionarios_rh')
+        .from('funcionarios')
         .select('id, salario_base')
         .eq('status', 'Ativo')
 
@@ -247,7 +247,7 @@ export default function FolhaPagamento() {
                 payrolls.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">
-                      {p.funcionarios_rh?.nome || 'Desconhecido'}
+                      {p.funcionarios?.nome || 'Desconhecido'}
                     </TableCell>
                     <TableCell>{formatBRL(p.salario_base)}</TableCell>
                     <TableCell className="text-muted-foreground">

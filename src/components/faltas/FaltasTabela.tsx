@@ -59,7 +59,7 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
   useEffect(() => {
     if (canManage) {
       supabase
-        .from('departamentos_rh')
+        .from('departamentos')
         .select('*')
         .then(({ data }) => data && setDepartments(data))
     }
@@ -70,7 +70,7 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
     setIsLoading(true)
     let query = supabase
       .from('controle_ponto')
-      .select('*, funcionarios_rh!inner(nome, departamentos_rh(nome))')
+      .select('*, funcionarios!inner(nome, departamentos(nome))')
       .in('status', ['ausente', 'meio_periodo'])
       .order('data', { ascending: false })
 
@@ -91,8 +91,7 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
 
   const filteredLogs = useMemo(() => {
     return logs.filter(
-      (log) =>
-        selectedDept === 'Todos' || log.funcionarios_rh?.departamentos_rh?.nome === selectedDept,
+      (log) => selectedDept === 'Todos' || log.funcionarios?.departamentos?.nome === selectedDept,
     )
   }, [logs, selectedDept])
 
@@ -222,9 +221,9 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
                   return (
                     <TableRow key={log.id}>
                       <TableCell className="font-medium text-sm">
-                        {log.funcionarios_rh?.nome || 'Desconhecido'}
+                        {log.funcionarios?.nome || 'Desconhecido'}
                         <div className="text-[10px] text-muted-foreground font-normal uppercase tracking-widest mt-1">
-                          {log.funcionarios_rh?.departamentos_rh?.nome}
+                          {log.funcionarios?.departamentos?.nome}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm whitespace-nowrap">

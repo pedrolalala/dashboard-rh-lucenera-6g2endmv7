@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Briefcase, PlusCircle, Search } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Briefcase, PlusCircle, Search, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,49 +11,45 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-
-const mockCargos = [
-  {
-    id: '1',
-    titulo: 'Analista de Sistemas',
-    departamento: 'TI',
-    nivel: 'Pleno',
-    salarioBase: 'R$ 6.500,00',
-  },
-  {
-    id: '2',
-    titulo: 'Gerente de Vendas',
-    departamento: 'Vendas',
-    nivel: 'Sênior',
-    salarioBase: 'R$ 12.000,00',
-  },
-  {
-    id: '3',
-    titulo: 'Assistente Administrativo',
-    departamento: 'Operações',
-    nivel: 'Júnior',
-    salarioBase: 'R$ 3.200,00',
-  },
-  {
-    id: '4',
-    titulo: 'Especialista em RH',
-    departamento: 'RH',
-    nivel: 'Sênior',
-    salarioBase: 'R$ 9.800,00',
-  },
-  {
-    id: '5',
-    titulo: 'Analista Financeiro',
-    departamento: 'Financeiro',
-    nivel: 'Pleno',
-    salarioBase: 'R$ 5.800,00',
-  },
-]
+import { supabase } from '@/lib/supabase/client'
 
 export default function Cargos() {
   const [search, setSearch] = useState('')
+  const [cargos, setCargos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filtered = mockCargos.filter((c) => c.titulo.toLowerCase().includes(search.toLowerCase()))
+  useEffect(() => {
+    const fetchCargos = async () => {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('funcionarios')
+        .select('cargo, salario_base, departamentos(nome)')
+
+      if (data && !error) {
+        const cargoMap = new Map()
+        data.forEach((f) => {
+          if (!f.cargo) return
+          if (!cargoMap.has(f.cargo)) {
+            cargoMap.set(f.cargo, {
+              id: f.cargo,
+              titulo: f.cargo,
+              departamento: (f.departamentos as any)?.nome || '-',
+              salarioBase: f.salario_base || 0,
+              nivel: 'Padrão',
+            })
+          }
+        })
+        setCargos(Array.from(cargoMap.values()))
+      }
+      setLoading(false)
+    }
+    fetchCargos()
+  }, [])
+
+  const filtered = cargos.filter((c) => c.titulo.toLowerCase().includes(search.toLowerCase()))
+
+  const formatBRL = (val: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -79,7 +75,8 @@ export default function Cargos() {
                 <Briefcase className="h-4 w-4" /> Cargos Cadastrados
               </CardTitle>
               <CardDescription className="mt-1">
-                Lista de todos os cargos disponíveis na estrutura organizacional.
+                Lista de todos os cargos disponíveis na estrutura organizacional baseados nos
+                registros de colaboradores.
               </CardDescription>
             </div>
             <div className="relative w-full sm:w-72">
@@ -104,7 +101,13 @@ export default function Cargos() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                  </TableCell>
+                </TableRow>
+              ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={4}
@@ -119,7 +122,7 @@ export default function Cargos() {
                     <TableCell className="font-medium text-foreground">{cargo.titulo}</TableCell>
                     <TableCell>{cargo.departamento}</TableCell>
                     <TableCell>{cargo.nivel}</TableCell>
-                    <TableCell className="text-right">{cargo.salarioBase}</TableCell>
+                    <TableCell className="text-right">{formatBRL(cargo.salarioBase)}</TableCell>
                   </TableRow>
                 ))
               )}

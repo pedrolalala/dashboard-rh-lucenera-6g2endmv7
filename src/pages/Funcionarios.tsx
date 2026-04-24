@@ -65,10 +65,10 @@ export default function Funcionarios() {
 
   const fetchEmployees = async () => {
     setIsLoading(true)
-    const { data } = await supabase.from('funcionarios_rh').select('*, departamentos_rh(nome)')
+    const { data } = await supabase.from('funcionarios').select('*, departamentos(nome)')
     if (data) {
       setEmployees(
-        data.map((d) => ({
+        data.map((d: any) => ({
           id: d.id,
           name: d.nome,
           email: d.email,
@@ -78,7 +78,7 @@ export default function Funcionarios() {
             ? new Date(d.data_admissao).toISOString().split('T')[0]
             : '',
           departmentId: d.departamento_id || '',
-          departmentName: (d.departamentos_rh as any)?.nome || 'Sem Departamento',
+          departmentName: d.departamentos?.nome || 'Sem Departamento',
           role: d.cargo || '',
           salary: Number(d.salario_base) || 0,
           status: (d.status as 'Ativo' | 'Inativo') || 'Ativo',
@@ -92,7 +92,7 @@ export default function Funcionarios() {
     if (user && user.app_role === 'admin') {
       fetchEmployees()
       supabase
-        .from('departamentos_rh')
+        .from('departamentos')
         .select('*')
         .then(({ data }) => {
           if (data) setDepartments(data)
@@ -100,7 +100,6 @@ export default function Funcionarios() {
     }
   }, [user])
 
-  // Admin-only access control
   if (user && !user.app_role) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -158,10 +157,7 @@ export default function Funcionarios() {
     }
 
     if (editingEmp) {
-      const { error } = await supabase
-        .from('funcionarios_rh')
-        .update(payload)
-        .eq('id', editingEmp.id)
+      const { error } = await supabase.from('funcionarios').update(payload).eq('id', editingEmp.id)
       if (!error) {
         toast({ title: 'Funcionário atualizado com sucesso!' })
         fetchEmployees()
@@ -170,7 +166,7 @@ export default function Funcionarios() {
         toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' })
       }
     } else {
-      const { error } = await supabase.from('funcionarios_rh').insert(payload)
+      const { error } = await supabase.from('funcionarios').insert(payload)
       if (!error) {
         toast({ title: 'Funcionário criado com sucesso!' })
         fetchEmployees()
@@ -183,7 +179,7 @@ export default function Funcionarios() {
 
   const confirmDelete = async () => {
     if (deleteId) {
-      const { error } = await supabase.from('funcionarios_rh').delete().eq('id', deleteId)
+      const { error } = await supabase.from('funcionarios').delete().eq('id', deleteId)
       if (!error) {
         toast({ title: 'Funcionário excluído.' })
         fetchEmployees()

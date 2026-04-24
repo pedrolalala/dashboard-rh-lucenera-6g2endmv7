@@ -23,7 +23,7 @@ export interface EvaluationData {
   comentarios: string
   data_avaliacao: string
   avaliador_id: string
-  funcionarios_rh?: { nome: string }
+  funcionarios?: { nome: string }
   usuarios?: { nome: string }
 }
 
@@ -32,7 +32,7 @@ export function EvaluationTable({ data }: { data: EvaluationData[] }) {
     return (
       <div className="text-center py-12 text-muted-foreground flex flex-col items-center">
         <FileText className="h-10 w-10 text-slate-300 mb-3" />
-        <p>Nenhuma avaliação encontrada para os filtros selecionados.</p>
+        <p className="text-xs uppercase tracking-widest mt-2">Nenhuma avaliação encontrada.</p>
       </div>
     )
   }
@@ -57,7 +57,7 @@ export function EvaluationTable({ data }: { data: EvaluationData[] }) {
           return (
             <TableRow key={item.id} className="group">
               <TableCell className="font-medium">
-                {item.funcionarios_rh?.nome || 'Desconhecido'}
+                {item.funcionarios?.nome || 'Desconhecido'}
               </TableCell>
               <TableCell className="text-muted-foreground whitespace-nowrap">
                 {new Date(item.periodo_inicio).toLocaleDateString('pt-BR')} -{' '}
@@ -80,13 +80,19 @@ export function EvaluationTable({ data }: { data: EvaluationData[] }) {
               <TableCell className="text-right">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 uppercase tracking-widest text-[10px]"
+                    >
                       Detalhes
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-80" align="end">
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-sm border-b pb-2">Notas Detalhadas</h4>
+                      <h4 className="font-semibold text-sm border-b pb-2 uppercase tracking-widest text-xs">
+                        Notas Detalhadas
+                      </h4>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="text-muted-foreground">Produtividade:</div>
                         <div className="font-medium text-right">{item.produtividade}/5</div>
@@ -99,8 +105,10 @@ export function EvaluationTable({ data }: { data: EvaluationData[] }) {
                       </div>
                       {item.comentarios && (
                         <div className="pt-2 border-t text-sm">
-                          <span className="font-medium">Comentários:</span>
-                          <p className="text-muted-foreground mt-1 whitespace-pre-wrap">
+                          <span className="font-medium uppercase tracking-widest text-[10px]">
+                            Comentários:
+                          </span>
+                          <p className="text-muted-foreground mt-1 whitespace-pre-wrap text-xs">
                             {item.comentarios}
                           </p>
                         </div>

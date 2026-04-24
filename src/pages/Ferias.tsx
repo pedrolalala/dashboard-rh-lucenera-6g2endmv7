@@ -39,9 +39,7 @@ export default function Ferias() {
   const { toast } = useToast()
 
   const fetchRequests = async () => {
-    let query = supabase
-      .from('ferias')
-      .select('*, funcionarios_rh(id, nome, departamentos_rh(nome))')
+    let query = supabase.from('ferias').select('*, funcionarios(id, nome, departamentos(nome))')
 
     if (user?.app_role === 'funcionario' && user?.funcionario_id) {
       query = query.eq('funcionario_id', user.funcionario_id)
@@ -52,9 +50,9 @@ export default function Ferias() {
       setRequests(
         data.map((d: any) => ({
           id: d.id,
-          employeeId: d.funcionarios_rh?.id || '',
-          employeeName: d.funcionarios_rh?.nome || '',
-          department: d.funcionarios_rh?.departamentos_rh?.nome || '',
+          employeeId: d.funcionarios?.id || '',
+          employeeName: d.funcionarios?.nome || '',
+          department: d.funcionarios?.departamentos?.nome || '',
           startDate: new Date(d.data_inicio),
           endDate: new Date(d.data_fim),
           days: d.dias,
