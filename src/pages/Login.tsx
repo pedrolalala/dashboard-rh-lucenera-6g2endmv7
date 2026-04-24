@@ -12,6 +12,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { toast } from '@/hooks/use-toast'
 import { Loader2, Lock, Mail } from 'lucide-react'
 import logoImg from '@/assets/logotipo-vertical_v1_preto-9e726.png'
@@ -20,7 +28,11 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signIn } = useAuth()
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
+
+  const { signIn, resetPassword } = useAuth()
   const navigate = useNavigate()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -41,6 +53,28 @@ export default function Login() {
       navigate('/')
     }
     setLoading(false)
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!resetEmail) return
+    setResetLoading(true)
+    const { error } = await resetPassword(resetEmail)
+    if (error) {
+      toast({
+        title: 'Falha ao recuperar senha',
+        description: error.message || 'Verifique o e-mail e tente novamente.',
+        variant: 'destructive',
+      })
+    } else {
+      toast({
+        title: 'E-mail enviado',
+        description: 'Enviamos as instruções para recuperação no seu e-mail.',
+      })
+      setResetDialogOpen(false)
+      setResetEmail('')
+    }
+    setResetLoading(false)
   }
 
   return (
@@ -93,6 +127,7 @@ export default function Login() {
                   </Label>
                   <button
                     type="button"
+                    onClick={() => setResetDialogOpen(true)}
                     className="text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-300 transition-colors"
                   >
                     Esqueci minha senha
@@ -132,6 +167,42 @@ export default function Login() {
           </form>
         </Card>
       </div>
+
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Recuperar Senha</DialogTitle>
+            <DialogDescription>
+              Informe o seu e-mail abaixo. Enviaremos um link para você redefinir sua senha.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleResetPassword}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="reset-email">E-mail</Label>
+                <Input
+                  id="reset-email"
+                  type="email"
+                  placeholder="admin@lucenera.com"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="submit"
+                disabled={resetLoading || !resetEmail}
+                className="w-full sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-all font-semibold"
+              >
+                {resetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Enviar link
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
