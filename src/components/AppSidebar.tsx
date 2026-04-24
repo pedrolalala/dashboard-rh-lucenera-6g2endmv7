@@ -5,7 +5,7 @@ import {
   LayoutDashboard,
   Settings,
   LogOut,
-  Clock,
+  UserX,
   Star,
   FileText,
   UserPlus,
@@ -31,7 +31,7 @@ const navGestao = [
 ]
 
 const navOperacional = [
-  { name: 'Controle de Ponto', href: '/ponto', icon: Clock },
+  { name: 'Controle de Faltas', href: '/faltas', icon: UserX },
   { name: 'Férias', href: '/ferias', icon: Calendar },
 ]
 
@@ -69,7 +69,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-6 flex items-center justify-center border-b border-border/50">
         <Link
-          to={isFuncionario ? '/ponto' : '/'}
+          to={isFuncionario ? '/faltas' : '/'}
           className="w-full flex justify-center hover:opacity-80 transition-opacity"
         >
           <img

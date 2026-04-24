@@ -39,9 +39,9 @@ const REPORT_CONFIG = [
     type: 'date',
   },
   {
-    id: 'ponto',
-    title: 'Relatório de Ponto',
-    desc: 'Exporta as marcações de assiduidade e horas trabalhadas.',
+    id: 'faltas',
+    title: 'Relatório de Faltas',
+    desc: 'Exporta o histórico de ausências e justificativas.',
     type: 'month',
   },
 ]

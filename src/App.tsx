@@ -14,7 +14,7 @@ const Funcionarios = lazy(() => import('./pages/Funcionarios'))
 const Ferias = lazy(() => import('./pages/Ferias'))
 const FolhaPagamento = lazy(() => import('./pages/Folha'))
 const Avaliacoes = lazy(() => import('./pages/Avaliacoes'))
-const Ponto = lazy(() => import('./pages/Ponto'))
+const Faltas = lazy(() => import('./pages/Faltas'))
 const Relatorios = lazy(() => import('./pages/Relatorios'))
 const Cargos = lazy(() => import('./pages/Cargos'))
 const Configuracoes = lazy(() => import('./pages/Configuracoes'))
@@ -43,7 +43,7 @@ const ProtectedRoute = () => {
 const AdminGerenteRoute = () => {
   const { user } = useAuth()
   if (user?.app_role === 'funcionario') {
-    return <Navigate to="/ponto" replace />
+    return <Navigate to="/faltas" replace />
   }
   return <Outlet />
 }
@@ -51,7 +51,7 @@ const AdminGerenteRoute = () => {
 const IndexRoute = () => {
   const { user } = useAuth()
   if (user?.app_role === 'funcionario') {
-    return <Navigate to="/ponto" replace />
+    return <Navigate to="/faltas" replace />
   }
   return <Index />
 }
@@ -81,7 +81,7 @@ const App = () => (
                 <Route element={<Layout />}>
                   <Route path="/" element={<IndexRoute />} />
                   <Route path="/ferias" element={<Ferias />} />
-                  <Route path="/ponto" element={<Ponto />} />
+                  <Route path="/faltas" element={<Faltas />} />
 
                   <Route element={<AdminGerenteRoute />}>
                     <Route path="/funcionarios" element={<Funcionarios />} />
