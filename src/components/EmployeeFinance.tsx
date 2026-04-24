@@ -35,10 +35,23 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
   const [folhaId, setFolhaId] = useState<string | null>(null)
+  const [historico, setHistorico] = useState<any[]>([])
 
   useEffect(() => {
     fetchFolha()
+    fetchHistorico()
   }, [mes, ano, employee.id])
+
+  const fetchHistorico = async () => {
+    const { data } = await supabase
+      .from('folha_pagamento')
+      .select('*')
+      .eq('funcionario_id', employee.id)
+      .order('ano', { ascending: false })
+      .order('mes', { ascending: false })
+      .limit(12)
+    if (data) setHistorico(data)
+  }
 
   const fetchFolha = async () => {
     setLoading(true)
@@ -53,16 +66,16 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
     if (data) {
       setFolhaId(data.id)
       setSalarioBase(String(data.salario_base || 0))
-      setComissao(String((data as any).comissao || 0))
+      setComissao(String(data.comissao || 0))
     } else {
       setFolhaId(null)
       const { data: empData } = await supabase
         .from('funcionarios')
-        .select('salario_base')
+        .select('salario_base, comissao_padrao')
         .eq('id', employee.id)
         .single()
       setSalarioBase(String(empData?.salario_base || 0))
-      setComissao('0')
+      setComissao(String(empData?.comissao_padrao || 0))
     }
     setLoading(false)
   }
@@ -73,7 +86,10 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
       const base = Number(salarioBase) || 0
       const com = Number(comissao) || 0
 
-      await supabase.from('funcionarios').update({ salario_base: base }).eq('id', employee.id)
+      await supabase
+        .from('funcionarios')
+        .update({ salario_base: base, comissao_padrao: com })
+        .eq('id', employee.id)
 
       const descontos = base * 0.185
       const adicionais = 800
@@ -88,7 +104,7 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
         adicionais,
         comissao: com,
         salario_liquido: liquido,
-      } as any
+      }
 
       if (folhaId) {
         const { error } = await supabase.from('folha_pagamento').update(payload).eq('id', folhaId)
@@ -100,6 +116,7 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
 
       toast({ title: 'Dados financeiros atualizados com sucesso!' })
       fetchFolha()
+      fetchHistorico()
     } catch (err: any) {
       toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' })
     } finally {
@@ -225,6 +242,37 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {historico.length > 0 && (
+        <div className="space-y-3 mt-8">
+          <Label className="uppercase text-[10px] tracking-widest text-muted-foreground">
+            Histórico de Comissões e Folhas
+          </Label>
+          <div className="space-y-2">
+            {historico.map((h) => (
+              <div
+                key={h.id}
+                className="flex justify-between items-center p-3 rounded-md border border-border bg-muted/10 text-sm"
+              >
+                <div>
+                  <span className="font-medium">
+                    {String(h.mes).padStart(2, '0')}/{h.ano}
+                  </span>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Liq: R$ {Number(h.salario_liquido).toFixed(2)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-primary font-medium text-xs uppercase tracking-widest">
+                    Comissão
+                  </span>
+                  <p className="text-emerald-500 font-bold">R$ {Number(h.comissao).toFixed(2)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )

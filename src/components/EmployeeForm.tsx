@@ -30,6 +30,7 @@ const schema = z.object({
   departmentId: z.string().min(1, 'Selecione um departamento.'),
   role: z.string().optional(),
   salary: z.coerce.number().optional(),
+  comissao_padrao: z.coerce.number().optional(),
   status: z.enum(['Ativo', 'Inativo']),
 })
 
@@ -53,6 +54,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           departmentId: employee.departmentId,
           role: employee.role,
           salary: employee.salary,
+          comissao_padrao: employee.comissao_padrao,
           status: employee.status,
         }
       : {
@@ -64,6 +66,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           departmentId: '',
           role: '',
           salary: 0,
+          comissao_padrao: 0,
           status: 'Ativo',
         },
   })
@@ -120,7 +123,8 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
             )}
           />
           <Field name="role" label="Cargo" placeholder="Ex: Analista Pleno" />
-          <Field name="salary" label="Salário Base Padrão (R$)" type="number" />
+          <Field name="salary" label="Salário Base (R$)" type="number" />
+          <Field name="comissao_padrao" label="Comissão Padrão (R$)" type="number" />
         </div>
         <FormField
           control={form.control}

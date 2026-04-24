@@ -48,6 +48,7 @@ export type Employee = {
   cpf: string
   admissionDate: string
   salary: number
+  comissao_padrao?: number
 }
 
 export default function Funcionarios() {
@@ -83,6 +84,7 @@ export default function Funcionarios() {
           departmentName: d.departamentos?.nome || 'Sem Departamento',
           role: d.cargo || '',
           salary: Number(d.salario_base) || 0,
+          comissao_padrao: Number(d.comissao_padrao) || 0,
           status: (d.status as 'Ativo' | 'Inativo') || 'Ativo',
         })),
       )
@@ -155,6 +157,7 @@ export default function Funcionarios() {
       departamento_id: data.departmentId,
       cargo: data.role,
       salario_base: data.salary,
+      comissao_padrao: data.comissao_padrao,
       status: data.status,
     }
 
