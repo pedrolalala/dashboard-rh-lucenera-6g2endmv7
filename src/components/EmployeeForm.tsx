@@ -32,6 +32,7 @@ const schema = z.object({
   salary: z.coerce.number().optional(),
   comissao_padrao: z.coerce.number().optional(),
   status: z.enum(['Ativo', 'Inativo']),
+  empresa: z.string().optional(),
 })
 
 interface EmployeeFormProps {
@@ -56,6 +57,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           salary: employee.salary,
           comissao_padrao: employee.comissao_padrao,
           status: employee.status,
+          empresa: employee.empresa,
         }
       : {
           name: '',
@@ -68,6 +70,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           salary: 0,
           comissao_padrao: 0,
           status: 'Ativo',
+          empresa: '',
         },
   })
 
@@ -96,6 +99,28 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           <Field name="phone" label="Telefone" placeholder="(11) 99999-9999" />
           <Field name="cpf" label="CPF" placeholder="000.000.000-00" />
           <Field name="admissionDate" label="Data de Admissão" type="date" />
+          <FormField
+            control={form.control}
+            name="empresa"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="uppercase text-[10px] tracking-widest">Empresa</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="islight">Islight</SelectItem>
+                    <SelectItem value="Manoela">Manoela</SelectItem>
+                    <SelectItem value="Foco">Foco</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="departmentId"

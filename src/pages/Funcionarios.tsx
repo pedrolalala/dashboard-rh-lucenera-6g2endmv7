@@ -49,6 +49,7 @@ export type Employee = {
   admissionDate: string
   salary: number
   comissao_padrao?: number
+  empresa?: string
 }
 
 export default function Funcionarios() {
@@ -56,6 +57,7 @@ export default function Funcionarios() {
   const [departments, setDepartments] = useState<{ id: string; nome: string }[]>([])
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('Todos')
+  const [empresaFilter, setEmpresaFilter] = useState('Todas')
   const [isLoading, setIsLoading] = useState(true)
 
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -86,6 +88,7 @@ export default function Funcionarios() {
           salary: Number(d.salario_base) || 0,
           comissao_padrao: Number(d.comissao_padrao) || 0,
           status: (d.status as 'Ativo' | 'Inativo') || 'Ativo',
+          empresa: d.empresa || '',
         })),
       )
     }
@@ -133,8 +136,9 @@ export default function Funcionarios() {
   const filteredEmployees = employees.filter((emp) => {
     const matchesSearch = emp.name.toLowerCase().includes(search.toLowerCase())
     const matchesDept = deptFilter === 'Todos' || emp.departmentId === deptFilter
+    const matchesEmpresa = empresaFilter === 'Todas' || emp.empresa === empresaFilter
     const isAtivo = emp.status === 'Ativo'
-    return matchesSearch && matchesDept && isAtivo
+    return matchesSearch && matchesDept && matchesEmpresa && isAtivo
   })
 
   const handleCreate = () => {
@@ -159,6 +163,7 @@ export default function Funcionarios() {
       salario_base: data.salary,
       comissao_padrao: data.comissao_padrao,
       status: data.status,
+      empresa: data.empresa,
     }
 
     if (editingEmp) {
@@ -223,10 +228,21 @@ export default function Funcionarios() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Filter className="h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+              <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
+              <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
+                <SelectTrigger className="w-full sm:w-[160px] bg-transparent">
+                  <SelectValue placeholder="Empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Todas">Todas as Empresas</SelectItem>
+                  <SelectItem value="islight">Islight</SelectItem>
+                  <SelectItem value="Manoela">Manoela</SelectItem>
+                  <SelectItem value="Foco">Foco</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={deptFilter} onValueChange={setDeptFilter}>
-                <SelectTrigger className="w-[200px] bg-transparent">
+                <SelectTrigger className="w-full sm:w-[200px] bg-transparent">
                   <SelectValue placeholder="Departamento" />
                 </SelectTrigger>
                 <SelectContent>

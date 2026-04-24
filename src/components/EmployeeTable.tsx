@@ -26,6 +26,7 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
           <TableHead>Colaborador</TableHead>
           <TableHead>Contato</TableHead>
           <TableHead>Departamento</TableHead>
+          <TableHead>Empresa</TableHead>
           <TableHead>Cargo</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Ações</TableHead>
@@ -61,6 +62,7 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
               </div>
             </TableCell>
             <TableCell>{emp.departmentName}</TableCell>
+            <TableCell>{emp.empresa || '-'}</TableCell>
             <TableCell>{emp.role || '-'}</TableCell>
             <TableCell>
               <Badge
