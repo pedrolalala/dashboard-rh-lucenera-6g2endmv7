@@ -97,11 +97,12 @@ export default function FolhaPagamento() {
           salario_base: base,
           descontos,
           adicionais,
+          comissao: 0,
           salario_liquido: base - descontos + adicionais,
         }
       })
 
-      const { error } = await supabase.from('folha_pagamento').insert(payload)
+      const { error } = await supabase.from('folha_pagamento').insert(payload as any)
       if (error) throw error
 
       toast({ title: 'Folha de pagamento gerada com sucesso!' })
@@ -222,22 +223,23 @@ export default function FolhaPagamento() {
               <TableRow className="bg-muted/10">
                 <TableHead>Funcionário</TableHead>
                 <TableHead>Salário Base</TableHead>
-                <TableHead>Descontos (INSS/IR)</TableHead>
-                <TableHead>Adicionais (VR/VT)</TableHead>
+                <TableHead>Comissão</TableHead>
+                <TableHead>Descontos</TableHead>
+                <TableHead>Adicionais</TableHead>
                 <TableHead className="text-right">Salário Líquido</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : payrolls.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-8 text-muted-foreground text-xs uppercase tracking-widest"
                   >
                     Nenhum registro encontrado para o período selecionado.
@@ -250,9 +252,10 @@ export default function FolhaPagamento() {
                       {p.funcionarios?.nome || 'Desconhecido'}
                     </TableCell>
                     <TableCell>{formatBRL(p.salario_base)}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      -{formatBRL(p.descontos)}
+                    <TableCell className="text-emerald-500 font-medium">
+                      +{formatBRL(p.comissao || 0)}
                     </TableCell>
+                    <TableCell className="text-destructive">-{formatBRL(p.descontos)}</TableCell>
                     <TableCell className="text-muted-foreground">
                       +{formatBRL(p.adicionais)}
                     </TableCell>

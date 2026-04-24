@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { EmployeeTable } from '@/components/EmployeeTable'
 import { EmployeeForm } from '@/components/EmployeeForm'
+import { EmployeeFinance } from '@/components/EmployeeFinance'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Select,
   SelectContent,
@@ -250,20 +252,45 @@ export default function Funcionarios() {
         <SheetContent className="w-full sm:max-w-[540px] overflow-y-auto">
           <SheetHeader className="mb-6">
             <SheetTitle className="uppercase tracking-widest font-light">
-              {editingEmp ? 'Editar Funcionário' : 'Novo Funcionário'}
+              {editingEmp ? 'Gerenciar Funcionário' : 'Novo Funcionário'}
             </SheetTitle>
             <SheetDescription>
               {editingEmp
-                ? 'Atualize as informações do colaborador abaixo.'
+                ? 'Gerencie os dados cadastrais e financeiros do colaborador.'
                 : 'Preencha os dados para registrar um novo colaborador no sistema.'}
             </SheetDescription>
           </SheetHeader>
-          <EmployeeForm
-            employee={editingEmp}
-            departments={departments}
-            onSubmit={handleSave}
-            onCancel={() => setIsSheetOpen(false)}
-          />
+
+          {!editingEmp ? (
+            <EmployeeForm
+              employee={undefined}
+              departments={departments}
+              onSubmit={handleSave}
+              onCancel={() => setIsSheetOpen(false)}
+            />
+          ) : (
+            <Tabs defaultValue="dados" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="dados" className="uppercase tracking-widest text-[10px]">
+                  Dados Pessoais
+                </TabsTrigger>
+                <TabsTrigger value="financeiro" className="uppercase tracking-widest text-[10px]">
+                  Financeiro / Folha
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="dados" className="mt-0">
+                <EmployeeForm
+                  employee={editingEmp}
+                  departments={departments}
+                  onSubmit={handleSave}
+                  onCancel={() => setIsSheetOpen(false)}
+                />
+              </TabsContent>
+              <TabsContent value="financeiro" className="mt-0">
+                <EmployeeFinance employee={editingEmp} />
+              </TabsContent>
+            </Tabs>
+          )}
         </SheetContent>
       </Sheet>
 

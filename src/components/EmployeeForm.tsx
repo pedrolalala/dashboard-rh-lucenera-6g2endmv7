@@ -120,7 +120,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
             )}
           />
           <Field name="role" label="Cargo" placeholder="Ex: Analista Pleno" />
-          <Field name="salary" label="Salário Base (R$)" type="number" />
+          <Field name="salary" label="Salário Base Padrão (R$)" type="number" />
         </div>
         <FormField
           control={form.control}
