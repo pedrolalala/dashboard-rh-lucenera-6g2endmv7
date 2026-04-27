@@ -16,6 +16,7 @@ const FolhaPagamento = lazy(() => import('./pages/Folha'))
 const Avaliacoes = lazy(() => import('./pages/Avaliacoes'))
 const Faltas = lazy(() => import('./pages/Faltas'))
 const Relatorios = lazy(() => import('./pages/Relatorios'))
+const ValeTransporte = lazy(() => import('./pages/ValeTransporte'))
 const Cargos = lazy(() => import('./pages/Cargos'))
 const Configuracoes = lazy(() => import('./pages/Configuracoes'))
 const Login = lazy(() => import('./pages/Login'))
@@ -84,6 +85,7 @@ const App = () => (
                   <Route path="/faltas" element={<Faltas />} />
 
                   <Route element={<AdminGerenteRoute />}>
+                    <Route path="/vale-transporte" element={<ValeTransporte />} />
                     <Route path="/funcionarios" element={<Funcionarios />} />
                     <Route path="/recrutamento" element={<Recrutamento />} />
                     <Route path="/folha-pagamento" element={<FolhaPagamento />} />
