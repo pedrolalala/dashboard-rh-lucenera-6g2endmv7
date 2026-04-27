@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaltasTabela } from '@/components/faltas/FaltasTabela'
 import { FaltasCalendario } from '@/components/faltas/FaltasCalendario'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Bus } from 'lucide-react'
 
 export default function Faltas() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+
+  const handleRefresh = () => setRefreshTrigger((prev) => prev + 1)
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -28,18 +29,14 @@ export default function Faltas() {
         </Link>
       </div>
 
-      <Tabs defaultValue="tabela" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="tabela">Tabela de Registros</TabsTrigger>
-          <TabsTrigger value="calendario">Visão Calendário</TabsTrigger>
-        </TabsList>
-        <TabsContent value="tabela" className="mt-0">
-          <FaltasTabela refreshTrigger={refreshTrigger} />
-        </TabsContent>
-        <TabsContent value="calendario" className="mt-0">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-4 flex flex-col gap-6">
           <FaltasCalendario refreshTrigger={refreshTrigger} />
-        </TabsContent>
-      </Tabs>
+        </div>
+        <div className="xl:col-span-8 flex flex-col gap-6">
+          <FaltasTabela refreshTrigger={refreshTrigger} onRefresh={handleRefresh} />
+        </div>
+      </div>
     </div>
   )
 }

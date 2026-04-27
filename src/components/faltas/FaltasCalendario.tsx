@@ -80,46 +80,48 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
           <CalendarDays className="h-4 w-4" /> Calendário de Registros e Feriados
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6 flex flex-col xl:flex-row gap-8">
-        <div className="flex flex-col items-center xl:items-start gap-4">
-          <Calendar
-            mode="multiple"
-            selected={[...feriadosDates, ...faltasDates, ...medicasDates, ...licencasDates]}
-            month={date}
-            onMonthChange={setDate}
-            locale={ptBR}
-            modifiers={{
-              feriado: feriadosDates,
-              falta: faltasDates,
-              medica: medicasDates,
-              licenca: licencasDates,
-            }}
-            modifiersStyles={{
-              feriado: {
-                fontWeight: 'bold',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                color: '#1e3a8a',
-              },
-              falta: {
-                fontWeight: 'bold',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                color: '#7f1d1d',
-              },
-              medica: {
-                fontWeight: 'bold',
-                backgroundColor: 'rgba(234, 179, 8, 0.1)',
-                color: '#854d0e',
-              },
-              licenca: {
-                fontWeight: 'bold',
-                backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                color: '#581c87',
-              },
-            }}
-            className="border rounded-md shadow-sm bg-background"
-          />
+      <CardContent className="p-6 flex flex-col gap-8">
+        <div className="flex flex-col items-center gap-4">
+          <div className="border rounded-md shadow-sm bg-background p-1 w-full max-w-[280px] sm:max-w-none flex justify-center">
+            <Calendar
+              mode="multiple"
+              selected={[...feriadosDates, ...faltasDates, ...medicasDates, ...licencasDates]}
+              month={date}
+              onMonthChange={setDate}
+              locale={ptBR}
+              modifiers={{
+                feriado: feriadosDates,
+                falta: faltasDates,
+                medica: medicasDates,
+                licenca: licencasDates,
+              }}
+              modifiersStyles={{
+                feriado: {
+                  fontWeight: 'bold',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  color: '#1e3a8a',
+                },
+                falta: {
+                  fontWeight: 'bold',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#7f1d1d',
+                },
+                medica: {
+                  fontWeight: 'bold',
+                  backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                  color: '#854d0e',
+                },
+                licenca: {
+                  fontWeight: 'bold',
+                  backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                  color: '#581c87',
+                },
+              }}
+              className="bg-transparent"
+            />
+          </div>
 
-          <div className="flex flex-wrap xl:flex-col gap-3 text-xs text-muted-foreground w-full max-w-[280px] p-2 bg-muted/20 rounded-md border">
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground w-full p-3 bg-muted/20 rounded-md border">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-blue-500/20 border border-blue-500"></span>{' '}
               Feriados
@@ -160,11 +162,13 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
                       <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs shrink-0 border border-border/50 shadow-sm">
                         {format(parseISO(f.date), 'dd/MM')}
                       </span>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-blue-700 dark:text-blue-400">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium text-blue-700 dark:text-blue-400 leading-none">
                           Feriado Nacional
                         </span>
-                        <span className="text-muted-foreground text-[11px]">{f.name}</span>
+                        <span className="text-muted-foreground text-[11px] leading-tight">
+                          {f.name}
+                        </span>
                       </div>
                     </li>
                   ))}
@@ -186,11 +190,11 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
                       <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs shrink-0 border border-border/50 shadow-sm">
                         {format(parseISO(l.data), 'dd/MM')}
                       </span>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{l.funcionarios?.nome}</span>
-                        <span className="text-muted-foreground text-[11px]">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium leading-none">{l.funcionarios?.nome}</span>
+                        <span className="text-muted-foreground text-[11px] leading-tight">
                           {STATUS_MAP[l.status] || l.status}{' '}
-                          {l.justificativa ? `- ${l.justificativa}` : ''}
+                          {l.justificativa ? `— ${l.justificativa}` : ''}
                         </span>
                       </div>
                     </li>

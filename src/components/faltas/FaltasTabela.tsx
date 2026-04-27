@@ -72,7 +72,13 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   },
 }
 
-export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
+export function FaltasTabela({
+  refreshTrigger,
+  onRefresh,
+}: {
+  refreshTrigger: number
+  onRefresh?: () => void
+}) {
   const { user } = useAuth()
   const { toast } = useToast()
   const [logs, setLogs] = useState<any[]>([])
@@ -145,6 +151,7 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
     } else {
       toast({ title: 'Registro removido com sucesso' })
       fetchLogs()
+      onRefresh?.()
     }
   }
 
@@ -310,7 +317,10 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         record={recordToEdit}
-        onSuccess={fetchLogs}
+        onSuccess={() => {
+          fetchLogs()
+          onRefresh?.()
+        }}
       />
     </>
   )
