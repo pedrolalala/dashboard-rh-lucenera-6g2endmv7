@@ -42,6 +42,27 @@ interface EmployeeFormProps {
   onCancel: () => void
 }
 
+const Field = ({ control, name, label, type = 'text', placeholder = '' }: any) => (
+  <FormField
+    control={control}
+    name={name}
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel className="uppercase text-[10px] tracking-widest">{label}</FormLabel>
+        <FormControl>
+          <Input
+            type={type}
+            placeholder={placeholder}
+            {...field}
+            step={type === 'number' ? '0.01' : undefined}
+          />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+)
+
 export function EmployeeForm({ employee, departments, onSubmit, onCancel }: EmployeeFormProps) {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -74,36 +95,31 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
         },
   })
 
-  const Field = ({ name, label, type = 'text', placeholder = '' }: any) => (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel className="uppercase text-[10px] tracking-widest">{label}</FormLabel>
-          <FormControl>
-            <Input
-              type={type}
-              placeholder={placeholder}
-              {...field}
-              step={type === 'number' ? '0.01' : undefined}
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <Field name="name" label="Nome Completo *" placeholder="Ex: João da Silva" />
+        <Field
+          control={form.control}
+          name="name"
+          label="Nome Completo *"
+          placeholder="Ex: João da Silva"
+        />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field name="email" label="E-mail *" type="email" placeholder="joao@lucenera.com" />
-          <Field name="phone" label="Telefone" placeholder="(11) 99999-9999" />
-          <Field name="cpf" label="CPF" placeholder="000.000.000-00" />
-          <Field name="admissionDate" label="Data de Admissão" type="date" />
+          <Field
+            control={form.control}
+            name="email"
+            label="E-mail *"
+            type="email"
+            placeholder="joao@lucenera.com"
+          />
+          <Field
+            control={form.control}
+            name="phone"
+            label="Telefone"
+            placeholder="(11) 99999-9999"
+          />
+          <Field control={form.control} name="cpf" label="CPF" placeholder="000.000.000-00" />
+          <Field control={form.control} name="admissionDate" label="Data de Admissão" type="date" />
           <FormField
             control={form.control}
             name="empresa"
@@ -152,9 +168,19 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
               </FormItem>
             )}
           />
-          <Field name="role" label="Cargo" placeholder="Ex: Analista Pleno" />
-          <Field name="salary" label="Salário Base (R$)" type="number" />
-          <Field name="comissao_padrao" label="Comissão Padrão (%)" type="number" />
+          <Field
+            control={form.control}
+            name="role"
+            label="Cargo"
+            placeholder="Ex: Analista Pleno"
+          />
+          <Field control={form.control} name="salary" label="Salário Base (R$)" type="number" />
+          <Field
+            control={form.control}
+            name="comissao_padrao"
+            label="Comissão Padrão (%)"
+            type="number"
+          />
         </div>
         <FormField
           control={form.control}
