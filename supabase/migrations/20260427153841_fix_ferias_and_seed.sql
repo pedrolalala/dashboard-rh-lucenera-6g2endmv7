@@ -44,7 +44,7 @@ BEGIN
 
   -- 3. Insere a solicitação de férias requisitada (19/08/2026 até 03/09/2026 = 16 dias)
   IF NOT EXISTS (SELECT 1 FROM public.ferias WHERE funcionario_id = v_func_id AND data_inicio = '2026-08-19') THEN
-    INSERT INTO public.ferias (funcionario_id, data_inicio, data_fim, dias, status)
-    VALUES (v_func_id, '2026-08-19', '2026-09-03', 16, 'Pendente');
+    INSERT INTO public.ferias (funcionario_id, data_inicio, data_fim, status)
+    VALUES (v_func_id, '2026-08-19', '2026-09-03', 'Pendente');
   END IF;
 END $$;

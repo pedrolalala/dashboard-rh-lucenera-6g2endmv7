@@ -89,7 +89,6 @@ export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProp
       funcionario_id: employeeId,
       data_inicio: format(startDate, 'yyyy-MM-dd'),
       data_fim: format(endDate, 'yyyy-MM-dd'),
-      dias: calculatedDays,
       status: 'Pendente',
     })
 
