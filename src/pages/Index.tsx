@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Users, Building, UserCheck, UserX, ArrowRight, PlusCircle, Loader2 } from 'lucide-react'
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -102,7 +113,7 @@ export default function Index() {
               a.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           })),
         )
-        
+
         // Absenteísmo
         const start = format(startOfMonth(new Date()), 'yyyy-MM-dd')
         const end = format(endOfMonth(new Date()), 'yyyy-MM-dd')
@@ -111,16 +122,16 @@ export default function Index() {
           .select('status')
           .gte('data', start)
           .lte('data', end)
-          
-        let inj = 0;
-        let atest = 0;
-        let lic = 0;
-        faltas?.forEach(f => {
-           if(f.status === 'falta_injustificada' || f.status === 'ausente') inj++;
-           if(f.status === 'atestado') atest++;
-           if(f.status === 'licenca_maternidade') lic++;
-        });
-        
+
+        let inj = 0
+        let atest = 0
+        let lic = 0
+        faltas?.forEach((f) => {
+          if (f.status === 'falta_injustificada' || f.status === 'ausente') inj++
+          if (f.status === 'atestado') atest++
+          if (f.status === 'licenca_maternidade') lic++
+        })
+
         setAbsenteismoData([
           { name: 'Faltas Injustificadas', value: inj, fill: 'hsl(var(--destructive))' },
           { name: 'Atestados / Abonados', value: atest, fill: 'hsl(var(--primary))' },
@@ -253,7 +264,9 @@ export default function Index() {
 
         <Card className="md:col-span-3 shadow-none rounded-none border-border flex flex-col">
           <CardHeader className="border-b border-border pb-4">
-            <CardTitle className="text-sm uppercase tracking-widest">Indicador de Absenteísmo</CardTitle>
+            <CardTitle className="text-sm uppercase tracking-widest">
+              Indicador de Absenteísmo
+            </CardTitle>
             <CardDescription>Faltas Injustificadas vs Atestados (Mês Atual)</CardDescription>
           </CardHeader>
           <CardContent className="pt-6 flex-1 flex flex-col justify-center">
@@ -264,11 +277,21 @@ export default function Index() {
             ) : (
               <div className="h-[200px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={absenteismoData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <BarChart
+                    data={absenteismoData}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="hsl(var(--border))"
+                    />
                     <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
-                    <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }} />
+                    <Tooltip
+                      cursor={{ fill: 'hsl(var(--muted))' }}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
+                    />
                     <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
                       {absenteismoData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -278,34 +301,37 @@ export default function Index() {
                 </ResponsiveContainer>
               </div>
             )}
-            
+
             <div className="mt-8 pt-6 border-t border-border">
-              <h4 className="text-xs uppercase tracking-widest font-semibold mb-4 text-muted-foreground">Atividades Recentes</h4>
-            <div className="space-y-6">
-              {loading ? (
-                <div className="flex justify-center items-center py-6">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : recentActivities.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground text-xs uppercase tracking-widest">
-                  Nenhuma atividade recente.
-                </div>
-              ) : (
-                recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-4">
-                    <div className="mt-1 h-1.5 w-1.5 bg-foreground shrink-0" />
-                    <div className="flex-1 space-y-1">
-                      <p className="text-xs font-medium uppercase tracking-wider leading-none">
-                        {activity.action}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{activity.target}</p>
-                    </div>
-                    <div className="text-[10px] text-muted-foreground whitespace-nowrap uppercase tracking-widest">
-                      {activity.time}
-                    </div>
+              <h4 className="text-xs uppercase tracking-widest font-semibold mb-4 text-muted-foreground">
+                Atividades Recentes
+              </h4>
+              <div className="space-y-6">
+                {loading ? (
+                  <div className="flex justify-center items-center py-6">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
-                ))
-              )}
+                ) : recentActivities.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-xs uppercase tracking-widest">
+                    Nenhuma atividade recente.
+                  </div>
+                ) : (
+                  recentActivities.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-4">
+                      <div className="mt-1 h-1.5 w-1.5 bg-foreground shrink-0" />
+                      <div className="flex-1 space-y-1">
+                        <p className="text-xs font-medium uppercase tracking-wider leading-none">
+                          {activity.action}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{activity.target}</p>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground whitespace-nowrap uppercase tracking-widest">
+                        {activity.time}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
