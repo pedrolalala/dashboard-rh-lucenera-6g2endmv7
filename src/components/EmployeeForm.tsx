@@ -27,6 +27,7 @@ const schema = z.object({
   phone: z.string().optional(),
   cpf: z.string().optional(),
   admissionDate: z.string().optional(),
+  data_aniversario: z.string().optional(),
   departmentId: z.string().min(1, 'Selecione um departamento.'),
   role: z.string().optional(),
   salary: z.coerce.number().optional(),
@@ -73,6 +74,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           phone: employee.phone,
           cpf: employee.cpf,
           admissionDate: employee.admissionDate,
+          data_aniversario: (employee as any).data_aniversario || '',
           departmentId: employee.departmentId,
           role: employee.role,
           salary: employee.salary,
@@ -86,6 +88,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           phone: '',
           cpf: '',
           admissionDate: '',
+          data_aniversario: '',
           departmentId: '',
           role: '',
           salary: 0,
@@ -120,6 +123,12 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           />
           <Field control={form.control} name="cpf" label="CPF" placeholder="000.000.000-00" />
           <Field control={form.control} name="admissionDate" label="Data de Admissão" type="date" />
+          <Field
+            control={form.control}
+            name="data_aniversario"
+            label="Data de Aniversário"
+            type="date"
+          />
           <FormField
             control={form.control}
             name="empresa"
