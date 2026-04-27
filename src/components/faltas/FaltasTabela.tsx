@@ -38,17 +38,37 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     label: 'Falta Injustificada',
     color: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
   },
+  meio_periodo: {
+    label: 'Meio Período',
+    color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20',
+  },
   atestado: {
     label: 'Atestado Médico',
-    color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20',
+  },
+  licenca_medica: {
+    label: 'Licença Médica',
+    color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20',
   },
   licenca_maternidade: {
     label: 'Licença Maternidade',
     color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
   },
-  meio_periodo: {
-    label: 'Meio Período',
-    color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20',
+  licenca_paternidade: {
+    label: 'Licença Paternidade',
+    color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+  },
+  licenca_obito: {
+    label: 'Licença Óbito',
+    color: 'bg-stone-500/10 text-stone-600 dark:text-stone-400 border-stone-500/20',
+  },
+  licenca_casamento: {
+    label: 'Licença Casamento',
+    color: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20',
+  },
+  licenca_militar: {
+    label: 'Licença Militar',
+    color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
   },
 }
 
@@ -83,13 +103,7 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
     let query = supabase
       .from('controle_ponto')
       .select('*, funcionarios!inner(nome, departamentos(nome))')
-      .in('status', [
-        'ausente',
-        'meio_periodo',
-        'falta_injustificada',
-        'atestado',
-        'licenca_maternidade',
-      ])
+      .in('status', Object.keys(STATUS_CONFIG))
       .order('data', { ascending: false })
 
     if (user.app_role === 'funcionario' && user.funcionario_id) {
@@ -124,7 +138,7 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
   }
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Deseja realmente remover este registro de falta?')) return
+    if (!window.confirm('Deseja realmente remover este registro?')) return
     const { error } = await supabase.from('controle_ponto').delete().eq('id', id)
     if (error) {
       toast({ title: 'Erro ao remover', description: error.message, variant: 'destructive' })
@@ -140,7 +154,7 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
         <CardHeader className="pb-4 border-b border-border bg-transparent">
           <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
             <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
-              <UserX className="h-4 w-4" /> Histórico de Faltas
+              <UserX className="h-4 w-4" /> Histórico de Registros
             </CardTitle>
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
               <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
@@ -151,7 +165,7 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
                     onClick={handleAdd}
                     className="h-9 w-full sm:w-auto"
                   >
-                    <Plus className="h-4 w-4 mr-2" /> Registrar Falta
+                    <Plus className="h-4 w-4 mr-2" /> Novo Registro
                   </Button>
                 )}
 
@@ -227,7 +241,7 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
                     colSpan={canManage ? 5 : 4}
                     className="text-center py-8 text-muted-foreground text-xs uppercase tracking-widest"
                   >
-                    Nenhum registro de falta encontrado no período.
+                    Nenhum registro encontrado no período.
                   </TableCell>
                 </TableRow>
               ) : (
