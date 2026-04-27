@@ -34,6 +34,7 @@ export default function Ferias() {
   const [deptFilter, setDeptFilter] = useState('Todos')
   const [statusFilter, setStatusFilter] = useState('Todos')
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [requestToEdit, setRequestToEdit] = useState<VacationRequest | null>(null)
 
   const { user } = useAuth()
   const { toast } = useToast()
@@ -82,8 +83,28 @@ export default function Ferias() {
     }
   }
 
+  const handleEdit = (req: VacationRequest) => {
+    setRequestToEdit(req)
+    setIsFormOpen(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Deseja realmente excluir esta solicitação?')) return
+    const { error } = await supabase.from('ferias').delete().eq('id', id)
+    if (!error) {
+      toast({ title: 'Solicitação excluída com sucesso' })
+      fetchRequests()
+    } else {
+      toast({ title: 'Erro ao excluir solicitação', variant: 'destructive' })
+    }
+  }
+
   const handleSuccess = () => {
-    toast({ title: 'Solicitação criada com sucesso' })
+    toast({
+      title: requestToEdit
+        ? 'Solicitação atualizada com sucesso'
+        : 'Solicitação criada com sucesso',
+    })
     fetchRequests()
   }
 
@@ -98,7 +119,13 @@ export default function Ferias() {
             Gerencie solicitações e o calendário de disponibilidade da equipe.
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)} className="uppercase tracking-widest text-xs">
+        <Button
+          onClick={() => {
+            setRequestToEdit(null)
+            setIsFormOpen(true)
+          }}
+          className="uppercase tracking-widest text-xs"
+        >
           <PlusCircle className="mr-2 h-4 w-4" /> Nova Solicitação
         </Button>
       </div>
@@ -145,13 +172,23 @@ export default function Ferias() {
               </div>
             </CardHeader>
             <CardContent className="p-0 flex-1">
-              <VacationTable data={filteredRequests} onUpdateStatus={handleUpdateStatus} />
+              <VacationTable
+                data={filteredRequests}
+                onUpdateStatus={handleUpdateStatus}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
             </CardContent>
           </Card>
         </div>
       </div>
 
-      <VacationForm open={isFormOpen} onOpenChange={setIsFormOpen} onSuccess={handleSuccess} />
+      <VacationForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSuccess={handleSuccess}
+        requestToEdit={requestToEdit}
+      />
     </div>
   )
 }

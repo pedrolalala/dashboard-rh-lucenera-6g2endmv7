@@ -1,4 +1,4 @@
-import { Check, X, Clock } from 'lucide-react'
+import { Check, X, Clock, Edit2, Trash2 } from 'lucide-react'
 import {
   Table,
   TableBody,
@@ -16,9 +16,11 @@ import { useAuth } from '@/hooks/use-auth'
 interface VacationTableProps {
   data: VacationRequest[]
   onUpdateStatus: (id: string, status: VacationRequest['status']) => void
+  onEdit: (req: VacationRequest) => void
+  onDelete: (id: string) => void
 }
 
-export function VacationTable({ data, onUpdateStatus }: VacationTableProps) {
+export function VacationTable({ data, onUpdateStatus, onEdit, onDelete }: VacationTableProps) {
   const { user } = useAuth()
   const canUpdate = user?.app_role === 'admin' || user?.app_role === 'gerente'
 
@@ -89,7 +91,7 @@ export function VacationTable({ data, onUpdateStatus }: VacationTableProps) {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {req.status === 'Pendente' && canUpdate ? (
+                    {req.status === 'Pendente' && canUpdate && (
                       <>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -122,7 +124,42 @@ export function VacationTable({ data, onUpdateStatus }: VacationTableProps) {
                           </TooltipContent>
                         </Tooltip>
                       </>
-                    ) : (
+                    )}
+                    {(canUpdate || req.status === 'Pendente') && (
+                      <>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 text-foreground hover:bg-primary hover:text-primary-foreground border-border rounded-none"
+                              onClick={() => onEdit(req)}
+                            >
+                              <Edit2 className="size-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="rounded-none border-border text-[10px] uppercase tracking-widest">
+                            Editar
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground hover:border-destructive border-border rounded-none"
+                              onClick={() => onDelete(req.id)}
+                            >
+                              <Trash2 className="size-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="rounded-none border-border text-[10px] uppercase tracking-widest">
+                            Excluir
+                          </TooltipContent>
+                        </Tooltip>
+                      </>
+                    )}
+                    {!canUpdate && req.status !== 'Pendente' && (
                       <span className="text-[10px] text-muted-foreground px-2 py-1 uppercase tracking-widest">
                         Processado
                       </span>

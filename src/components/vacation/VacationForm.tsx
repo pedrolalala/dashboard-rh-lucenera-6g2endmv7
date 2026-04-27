@@ -24,6 +24,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
+import type { VacationRequest } from '@/pages/Ferias'
 
 interface EmployeeOption {
   id: string
@@ -34,9 +35,10 @@ interface VacationFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  requestToEdit?: VacationRequest | null
 }
 
-export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProps) {
+export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: VacationFormProps) {
   const [employeeId, setEmployeeId] = useState('')
   const [startDate, setStartDate] = useState<Date>()
   const [endDate, setEndDate] = useState<Date>()
@@ -57,7 +59,11 @@ export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProp
         const { data } = await query
         if (data) {
           setEmployees(data.map((d) => ({ id: d.id, name: d.nome })))
-          if (user?.app_role === 'funcionario' && user.funcionario_id) {
+          if (requestToEdit) {
+            setEmployeeId(requestToEdit.employeeId)
+            setStartDate(requestToEdit.startDate)
+            setEndDate(requestToEdit.endDate)
+          } else if (user?.app_role === 'funcionario' && user.funcionario_id) {
             setEmployeeId(user.funcionario_id)
           }
         }
@@ -68,7 +74,7 @@ export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProp
       setStartDate(undefined)
       setEndDate(undefined)
     }
-  }, [open, user])
+  }, [open, user, requestToEdit])
 
   const calculatedDays = useMemo(() => {
     if (startDate && endDate) {
@@ -85,16 +91,33 @@ export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProp
     e.preventDefault()
     if (!employeeId || !startDate || !endDate || calculatedDays <= 0) return
 
-    const { error } = await supabase.from('ferias').insert({
-      funcionario_id: employeeId,
-      data_inicio: format(startDate, 'yyyy-MM-dd'),
-      data_fim: format(endDate, 'yyyy-MM-dd'),
-      status: 'Pendente',
-    })
+    if (requestToEdit) {
+      const { error } = await supabase
+        .from('ferias')
+        .update({
+          data_inicio: format(startDate, 'yyyy-MM-dd'),
+          data_fim: format(endDate, 'yyyy-MM-dd'),
+          dias: calculatedDays,
+        })
+        .eq('id', requestToEdit.id)
 
-    if (!error) {
-      onSuccess()
-      onOpenChange(false)
+      if (!error) {
+        onSuccess()
+        onOpenChange(false)
+      }
+    } else {
+      const { error } = await supabase.from('ferias').insert({
+        funcionario_id: employeeId,
+        data_inicio: format(startDate, 'yyyy-MM-dd'),
+        data_fim: format(endDate, 'yyyy-MM-dd'),
+        dias: calculatedDays,
+        status: 'Pendente',
+      })
+
+      if (!error) {
+        onSuccess()
+        onOpenChange(false)
+      }
     }
   }
 
@@ -103,10 +126,12 @@ export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProp
       <DialogContent className="sm:max-w-[425px] rounded-none border-border bg-card">
         <DialogHeader>
           <DialogTitle className="uppercase tracking-widest text-sm font-light text-foreground">
-            Nova Solicitação de Férias
+            {requestToEdit ? 'Editar Solicitação de Férias' : 'Nova Solicitação de Férias'}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground tracking-wide">
-            Preencha os detalhes para solicitar um novo período de ausência.
+            {requestToEdit
+              ? 'Altere as datas do período de ausência.'
+              : 'Preencha os detalhes para solicitar um novo período de ausência.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5 py-4">
@@ -118,7 +143,7 @@ export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProp
               value={employeeId}
               onValueChange={setEmployeeId}
               required
-              disabled={user?.app_role === 'funcionario'}
+              disabled={user?.app_role === 'funcionario' || !!requestToEdit}
             >
               <SelectTrigger className="w-full rounded-none border-border">
                 <SelectValue placeholder="Selecione..." />
@@ -217,7 +242,7 @@ export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProp
               disabled={!employeeId || calculatedDays <= 0}
               className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-none text-xs uppercase tracking-widest"
             >
-              Solicitar
+              {requestToEdit ? 'Salvar' : 'Solicitar'}
             </Button>
           </DialogFooter>
         </form>
