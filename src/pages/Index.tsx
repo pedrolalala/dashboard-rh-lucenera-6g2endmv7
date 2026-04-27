@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Users, Building, UserCheck, UserX, ArrowRight, PlusCircle, Loader2 } from 'lucide-react'
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
+import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
@@ -12,6 +13,7 @@ export default function Index() {
   const [chartData, setChartData] = useState<{ sector: string; value: number; fill: string }[]>([])
   const [configForChart, setConfigForChart] = useState<any>({})
   const [recentActivities, setRecentActivities] = useState<any[]>([])
+  const [absenteismoData, setAbsenteismoData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
@@ -100,6 +102,29 @@ export default function Index() {
               a.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
           })),
         )
+        
+        // Absenteísmo
+        const start = format(startOfMonth(new Date()), 'yyyy-MM-dd')
+        const end = format(endOfMonth(new Date()), 'yyyy-MM-dd')
+        const { data: faltas } = await supabase
+          .from('controle_ponto')
+          .select('status')
+          .gte('data', start)
+          .lte('data', end)
+          
+        let inj = 0;
+        let atest = 0;
+        let lic = 0;
+        faltas?.forEach(f => {
+           if(f.status === 'falta_injustificada' || f.status === 'ausente') inj++;
+           if(f.status === 'atestado') atest++;
+           if(f.status === 'licenca_maternidade') lic++;
+        });
+        
+        setAbsenteismoData([
+          { name: 'Faltas Injustificadas', value: inj, fill: 'hsl(var(--destructive))' },
+          { name: 'Atestados / Abonados', value: atest, fill: 'hsl(var(--primary))' },
+        ])
       }
       setLoading(false)
     }
@@ -226,12 +251,36 @@ export default function Index() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-3 shadow-none rounded-none border-border">
+        <Card className="md:col-span-3 shadow-none rounded-none border-border flex flex-col">
           <CardHeader className="border-b border-border pb-4">
-            <CardTitle className="text-sm uppercase tracking-widest">Atividades Recentes</CardTitle>
-            <CardDescription>Últimas atualizações do RH</CardDescription>
+            <CardTitle className="text-sm uppercase tracking-widest">Indicador de Absenteísmo</CardTitle>
+            <CardDescription>Faltas Injustificadas vs Atestados (Mês Atual)</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 flex-1 flex flex-col justify-center">
+            {loading ? (
+              <div className="h-[200px] flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="h-[200px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={absenteismoData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }} />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
+                      {absenteismoData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            
+            <div className="mt-8 pt-6 border-t border-border">
+              <h4 className="text-xs uppercase tracking-widest font-semibold mb-4 text-muted-foreground">Atividades Recentes</h4>
             <div className="space-y-6">
               {loading ? (
                 <div className="flex justify-center items-center py-6">

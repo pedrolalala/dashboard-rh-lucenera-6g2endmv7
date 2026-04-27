@@ -238,6 +238,95 @@ export default function Relatorios() {
       const payload = { ...filters }
       if (payload.deptId === 'Todos') delete payload.deptId
       if (payload.empId === 'Todos') delete payload.empId
+
+      if (format === 'csv') {
+        let data: any = []
+        let csvContent = ''
+
+        if (reportType === 'folha') {
+          let query = supabase
+            .from('folha_pagamento')
+            .select('*, funcionarios(nome, departamento_id, departamentos(nome))')
+          if (payload.month) query = query.eq('mes', payload.month)
+          if (payload.year) query = query.eq('ano', payload.year)
+          if (payload.empId) query = query.eq('funcionario_id', payload.empId)
+          const { data: res } = await query
+          data =
+            res?.filter(
+              (d) => !payload.deptId || d.funcionarios?.departamento_id === payload.deptId,
+            ) || []
+
+          const csvHeader = [
+            'Funcionario',
+            'Departamento',
+            'Mes',
+            'Ano',
+            'Salario Base',
+            'Descontos',
+            'Adicionais',
+            'Salario Liquido',
+            'Dias Trabalhados',
+            'Dias Abonados (Atestado)',
+            'Dias de Falta',
+            'Valor Final VR/VT',
+          ].join(',')
+          const csvRows = data.map((r: any) =>
+            [
+              `"${r.funcionarios?.nome || ''}"`,
+              `"${r.funcionarios?.departamentos?.nome || ''}"`,
+              r.mes,
+              r.ano,
+              r.salario_base,
+              r.descontos,
+              r.adicionais,
+              r.salario_liquido,
+              r.dias_trabalhados || 0,
+              r.dias_abonados || 0,
+              r.dias_falta || 0,
+              r.valor_vr_vt || 0,
+            ].join(','),
+          )
+          csvContent = [csvHeader, ...csvRows].join('\n')
+        } else {
+          // Basic fallback for others
+          let table =
+            reportType === 'ferias'
+              ? 'ferias'
+              : reportType === 'avaliacoes'
+                ? 'avaliacoes'
+                : 'controle_ponto'
+          let query = supabase
+            .from(table as any)
+            .select('*, funcionarios(nome, departamento_id, departamentos(nome))')
+          if (payload.empId) query = query.eq('funcionario_id', payload.empId)
+          const { data: res } = await query
+          data =
+            res?.filter(
+              (d) => !payload.deptId || d.funcionarios?.departamento_id === payload.deptId,
+            ) || []
+
+          const csvHeader = ['ID', 'Funcionario', 'Departamento', 'Data_Criacao'].join(',')
+          const csvRows = data.map((r: any) =>
+            [
+              r.id,
+              `"${r.funcionarios?.nome || ''}"`,
+              `"${r.funcionarios?.departamentos?.nome || ''}"`,
+              r.created_at,
+            ].join(','),
+          )
+          csvContent = [csvHeader, ...csvRows].join('\n')
+        }
+
+        const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `relatorio-${reportType}-${Date.now()}.csv`
+        a.click()
+        setLoadingType('')
+        return
+      }
+
       if (payload.startDate) payload.startDate = payload.startDate.toISOString()
       if (payload.endDate) payload.endDate = payload.endDate.toISOString()
 
@@ -253,7 +342,7 @@ export default function Relatorios() {
         body: JSON.stringify({ reportType, format, filters: payload }),
       })
 
-      if (!res.ok) throw new Error(await res.text())
+      if (!res.ok) throw new Error('A geração de PDF pode estar indisponível no ambiente atual.')
 
       const blob = await res.blob()
       const url = window.URL.createObjectURL(blob)

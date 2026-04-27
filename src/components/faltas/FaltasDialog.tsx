@@ -165,7 +165,10 @@ export function FaltasDialog({
                 <SelectValue placeholder="Selecione o tipo..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ausente">Falta Integral</SelectItem>
+                <SelectItem value="falta_injustificada">Falta Injustificada</SelectItem>
+                <SelectItem value="atestado">Atestado Médico (Abonado)</SelectItem>
+                <SelectItem value="licenca_maternidade">Licença Maternidade</SelectItem>
+                <SelectItem value="ausente">Falta Integral (Antigo)</SelectItem>
                 <SelectItem value="meio_periodo">Meio Período</SelectItem>
               </SelectContent>
             </Select>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, parseISO } from 'date-fns'
 import { Calculator, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -78,7 +79,7 @@ export default function FolhaPagamento() {
 
       const { data: employees } = await supabase
         .from('funcionarios')
-        .select('id, salario_base')
+        .select('id, salario_base, valor_vr, valor_vt')
         .eq('status', 'Ativo')
 
       if (!employees || employees.length === 0) {
@@ -86,10 +87,60 @@ export default function FolhaPagamento() {
         return
       }
 
+      const start = startOfMonth(new Date(Number(genYear), Number(genMonth) - 1))
+      const end = endOfMonth(new Date(Number(genYear), Number(genMonth) - 1))
+
+      const res = await fetch(`https://brasilapi.com.br/api/feriados/v1/${genYear}`)
+      const feriados = res.ok ? await res.json() : []
+      const feriadosMes = feriados
+        .filter((f: any) => {
+          const d = parseISO(f.date)
+          return d.getMonth() === Number(genMonth) - 1
+        })
+        .map((f: any) => format(parseISO(f.date), 'yyyy-MM-dd'))
+
+      let diasUteis = 0
+      eachDayOfInterval({ start, end }).forEach((d) => {
+        if (!isWeekend(d)) {
+          const formatted = format(d, 'yyyy-MM-dd')
+          if (!feriadosMes.includes(formatted)) diasUteis++
+        }
+      })
+
+      const { data: faltas } = await supabase
+        .from('controle_ponto')
+        .select('funcionario_id, status, data')
+        .gte('data', format(start, 'yyyy-MM-dd'))
+        .lte('data', format(end, 'yyyy-MM-dd'))
+
       const payload = employees.map((emp) => {
+        const empFaltas = faltas?.filter((f) => f.funcionario_id === emp.id) || []
+
+        let faltasInjustificadas = 0
+        let atestados = 0
+        let licenca = 0
+
+        empFaltas.forEach((f) => {
+          if (f.status === 'falta_injustificada' || f.status === 'ausente') faltasInjustificadas++
+          else if (f.status === 'atestado') atestados++
+          else if (f.status === 'licenca_maternidade') licenca++
+        })
+
         const base = Number(emp.salario_base) || 0
-        const descontos = base * 0.185 // ~11% INSS + ~7.5% IR
-        const adicionais = 800 // VR 600 + VT 200
+        const valorVr = Number(emp.valor_vr) || 0
+        const valorVt = Number(emp.valor_vt) || 0
+
+        const descontoFalta = (base / 30) * faltasInjustificadas
+        const descontosInssIr = base * 0.185
+        const descontos = descontoFalta + descontosInssIr
+
+        const diasSemBeneficio = faltasInjustificadas + atestados + licenca
+        const diasVrVt = Math.max(0, diasUteis - diasSemBeneficio)
+        const valor_vr_vt = diasVrVt * (valorVr + valorVt)
+
+        const adicionais = valor_vr_vt || 800 // Fallback to 800 if no vr/vt registered
+        const diasTrabalhados = Math.max(0, diasUteis - faltasInjustificadas - licenca)
+
         return {
           funcionario_id: emp.id,
           mes: Number(genMonth),
@@ -99,6 +150,10 @@ export default function FolhaPagamento() {
           adicionais,
           comissao: 0,
           salario_liquido: base - descontos + adicionais,
+          dias_trabalhados: diasTrabalhados,
+          dias_abonados: atestados,
+          dias_falta: faltasInjustificadas,
+          valor_vr_vt: valor_vr_vt,
         }
       })
 
@@ -223,9 +278,10 @@ export default function FolhaPagamento() {
               <TableRow className="bg-muted/10">
                 <TableHead>Funcionário</TableHead>
                 <TableHead>Salário Base</TableHead>
-                <TableHead>Comissão</TableHead>
-                <TableHead>Descontos</TableHead>
-                <TableHead>Adicionais</TableHead>
+                <TableHead>Dias Trab.</TableHead>
+                <TableHead>Faltas</TableHead>
+                <TableHead>Abonados</TableHead>
+                <TableHead>Adicionais(VR/VT)</TableHead>
                 <TableHead className="text-right">Salário Líquido</TableHead>
               </TableRow>
             </TableHeader>
@@ -252,10 +308,11 @@ export default function FolhaPagamento() {
                       {p.funcionarios?.nome || 'Desconhecido'}
                     </TableCell>
                     <TableCell>{formatBRL(p.salario_base)}</TableCell>
-                    <TableCell className="text-emerald-500 font-medium">
-                      +{formatBRL(p.comissao || 0)}
+                    <TableCell className="text-muted-foreground">
+                      {p.dias_trabalhados ?? '-'}
                     </TableCell>
-                    <TableCell className="text-destructive">-{formatBRL(p.descontos)}</TableCell>
+                    <TableCell className="text-red-500">{p.dias_falta ?? '-'}</TableCell>
+                    <TableCell className="text-blue-500">{p.dias_abonados ?? '-'}</TableCell>
                     <TableCell className="text-muted-foreground">
                       +{formatBRL(p.adicionais)}
                     </TableCell>

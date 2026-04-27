@@ -34,6 +34,18 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     label: 'Falta Integral',
     color: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
   },
+  falta_injustificada: {
+    label: 'Falta Injustificada',
+    color: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+  },
+  atestado: {
+    label: 'Atestado Médico',
+    color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  },
+  licenca_maternidade: {
+    label: 'Licença Maternidade',
+    color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+  },
   meio_periodo: {
     label: 'Meio Período',
     color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20',
@@ -71,7 +83,13 @@ export function FaltasTabela({ refreshTrigger }: { refreshTrigger: number }) {
     let query = supabase
       .from('controle_ponto')
       .select('*, funcionarios!inner(nome, departamentos(nome))')
-      .in('status', ['ausente', 'meio_periodo'])
+      .in('status', [
+        'ausente',
+        'meio_periodo',
+        'falta_injustificada',
+        'atestado',
+        'licenca_maternidade',
+      ])
       .order('data', { ascending: false })
 
     if (user.app_role === 'funcionario' && user.funcionario_id) {
