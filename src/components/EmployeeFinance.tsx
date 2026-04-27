@@ -38,6 +38,8 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
   const { toast } = useToast()
   const [folhaId, setFolhaId] = useState<string | null>(null)
   const [historico, setHistorico] = useState<any[]>([])
+  const [totalVendas, setTotalVendas] = useState<string>('0')
+  const [percentualComissao, setPercentualComissao] = useState<string>('0')
 
   useEffect(() => {
     fetchFolha()
@@ -57,6 +59,32 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
 
   const fetchFolha = async () => {
     setLoading(true)
+
+    let vendasMes = 0
+    if (employee.usuario_id) {
+      const startDate = `${ano}-${String(mes).padStart(2, '0')}-01`
+      const lastDay = new Date(Number(ano), Number(mes), 0).getDate()
+      const endDate = `${ano}-${String(mes).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+      const { data: projetos } = await supabase
+        .from('projetos')
+        .select('codigo')
+        .eq('responsavel_id', employee.usuario_id)
+
+      if (projetos && projetos.length > 0) {
+        const cods = projetos.map((p) => p.codigo)
+        const { data: fechados } = await supabase
+          .from('projetos_fechados')
+          .select('valor_fechado')
+          .in('cod', cods)
+          .gte('data_fechamento', startDate)
+          .lte('data_fechamento', endDate)
+
+        vendasMes = fechados?.reduce((acc, curr) => acc + (Number(curr.valor_fechado) || 0), 0) || 0
+      }
+    }
+    setTotalVendas(String(vendasMes))
+
     const { data } = await supabase
       .from('folha_pagamento')
       .select('*')
@@ -65,10 +93,20 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
       .eq('ano', Number(ano))
       .maybeSingle()
 
+    let percent = 0
+
     if (data) {
       setFolhaId(data.id)
       setSalarioBase(String(data.salario_base || 0))
       setComissao(String(data.comissao || 0))
+
+      const { data: empData } = await supabase
+        .from('funcionarios')
+        .select('comissao_padrao')
+        .eq('id', employee.id)
+        .single()
+      percent = Number(empData?.comissao_padrao || 0)
+      setPercentualComissao(String(percent))
     } else {
       setFolhaId(null)
       const { data: empData } = await supabase
@@ -77,9 +115,13 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
         .eq('id', employee.id)
         .single()
       setSalarioBase(String(empData?.salario_base || 0))
-      setComissao(String(empData?.comissao_padrao || 0))
       setValorVr(String(empData?.valor_vr || 0))
       setValorVt(String(empData?.valor_vt || 0))
+      percent = Number(empData?.comissao_padrao || 0)
+      setPercentualComissao(String(percent))
+
+      const calcCom = vendasMes * (percent / 100)
+      setComissao(String(calcCom))
     }
     setLoading(false)
   }
@@ -89,13 +131,14 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
     try {
       const base = Number(salarioBase) || 0
       const com = Number(comissao) || 0
+      const perc = Number(percentualComissao) || 0
 
       const vr = Number(valorVr) || 0
       const vt = Number(valorVt) || 0
 
       await supabase
         .from('funcionarios')
-        .update({ salario_base: base, comissao_padrao: com, valor_vr: vr, valor_vt: vt })
+        .update({ salario_base: base, comissao_padrao: perc, valor_vr: vr, valor_vt: vt })
         .eq('id', employee.id)
 
       const descontos = base * 0.185
@@ -197,18 +240,45 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
 
               <div className="space-y-1.5 pt-2">
                 <Label className="uppercase text-[10px] tracking-widest text-primary">
-                  Comissão Mensal (R$)
+                  Comissão Apurada (R$)
                 </Label>
                 <Input
                   type="number"
                   value={comissao}
                   onChange={(e) => setComissao(e.target.value)}
                   placeholder="0.00"
+                  step="0.01"
                   className="border-primary/30 focus-visible:ring-primary font-medium bg-primary/5"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Valor de comissão ou bônus adicional para este mês específico.
+                  Calculada automaticamente ({percentualComissao}% sobre R${' '}
+                  {Number(totalVendas).toFixed(2)} em vendas).
                 </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="uppercase text-[10px] tracking-widest">Total Vendido (R$)</Label>
+                <Input
+                  type="number"
+                  value={totalVendas}
+                  disabled
+                  className="font-medium bg-muted/50"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="uppercase text-[10px] tracking-widest">Comissão Padrão (%)</Label>
+                <Input
+                  type="number"
+                  value={percentualComissao}
+                  onChange={(e) => {
+                    setPercentualComissao(e.target.value)
+                    setComissao(String(Number(totalVendas) * (Number(e.target.value) / 100)))
+                  }}
+                  step="0.01"
+                  className="font-medium"
+                />
               </div>
             </div>
 

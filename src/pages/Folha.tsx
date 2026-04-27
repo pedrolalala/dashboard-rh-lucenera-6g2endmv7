@@ -79,7 +79,7 @@ export default function FolhaPagamento() {
 
       const { data: employees } = await supabase
         .from('funcionarios')
-        .select('id, salario_base, valor_vr, valor_vt')
+        .select('id, usuario_id, salario_base, valor_vr, valor_vt, comissao_padrao')
         .eq('status', 'Ativo')
 
       if (!employees || employees.length === 0) {
@@ -89,6 +89,24 @@ export default function FolhaPagamento() {
 
       const start = startOfMonth(new Date(Number(genYear), Number(genMonth) - 1))
       const end = endOfMonth(new Date(Number(genYear), Number(genMonth) - 1))
+
+      const { data: fechados } = await supabase
+        .from('projetos_fechados')
+        .select('cod, valor_fechado')
+        .gte('data_fechamento', format(start, 'yyyy-MM-dd'))
+        .lte('data_fechamento', format(end, 'yyyy-MM-dd'))
+
+      const { data: projetos } = await supabase.from('projetos').select('codigo, responsavel_id')
+
+      const projMap = new Map(projetos?.map((p) => [p.codigo, p.responsavel_id]))
+      const salesPerUser = new Map()
+
+      fechados?.forEach((f) => {
+        const respId = projMap.get(f.cod)
+        if (respId) {
+          salesPerUser.set(respId, (salesPerUser.get(respId) || 0) + Number(f.valor_fechado))
+        }
+      })
 
       const res = await fetch(`https://brasilapi.com.br/api/feriados/v1/${genYear}`)
       const feriados = res.ok ? await res.json() : []
@@ -141,6 +159,10 @@ export default function FolhaPagamento() {
         const adicionais = valor_vr_vt || 800 // Fallback to 800 if no vr/vt registered
         const diasTrabalhados = Math.max(0, diasUteis - faltasInjustificadas - licenca)
 
+        const totalVendas = emp.usuario_id ? salesPerUser.get(emp.usuario_id) || 0 : 0
+        const percentualComissao = Number(emp.comissao_padrao) || 0
+        const valorComissao = totalVendas * (percentualComissao / 100)
+
         return {
           funcionario_id: emp.id,
           mes: Number(genMonth),
@@ -148,8 +170,8 @@ export default function FolhaPagamento() {
           salario_base: base,
           descontos,
           adicionais,
-          comissao: 0,
-          salario_liquido: base - descontos + adicionais,
+          comissao: valorComissao,
+          salario_liquido: base - descontos + adicionais + valorComissao,
           dias_trabalhados: diasTrabalhados,
           dias_abonados: atestados,
           dias_falta: faltasInjustificadas,
@@ -282,6 +304,7 @@ export default function FolhaPagamento() {
                 <TableHead>Faltas</TableHead>
                 <TableHead>Abonados</TableHead>
                 <TableHead>Adicionais(VR/VT)</TableHead>
+                <TableHead>Comissão</TableHead>
                 <TableHead className="text-right">Salário Líquido</TableHead>
               </TableRow>
             </TableHeader>
@@ -315,6 +338,9 @@ export default function FolhaPagamento() {
                     <TableCell className="text-blue-500">{p.dias_abonados ?? '-'}</TableCell>
                     <TableCell className="text-muted-foreground">
                       +{formatBRL(p.adicionais)}
+                    </TableCell>
+                    <TableCell className="text-emerald-500">
+                      +{formatBRL(p.comissao || 0)}
                     </TableCell>
                     <TableCell className="text-right font-bold text-foreground">
                       {formatBRL(p.salario_liquido)}

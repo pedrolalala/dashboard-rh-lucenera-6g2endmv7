@@ -82,7 +82,12 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
         <FormItem>
           <FormLabel className="uppercase text-[10px] tracking-widest">{label}</FormLabel>
           <FormControl>
-            <Input type={type} placeholder={placeholder} {...field} />
+            <Input
+              type={type}
+              placeholder={placeholder}
+              {...field}
+              step={type === 'number' ? '0.01' : undefined}
+            />
           </FormControl>
           <FormMessage />
         </FormItem>
@@ -149,7 +154,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           />
           <Field name="role" label="Cargo" placeholder="Ex: Analista Pleno" />
           <Field name="salary" label="Salário Base (R$)" type="number" />
-          <Field name="comissao_padrao" label="Comissão Padrão (R$)" type="number" />
+          <Field name="comissao_padrao" label="Comissão Padrão (%)" type="number" />
         </div>
         <FormField
           control={form.control}
