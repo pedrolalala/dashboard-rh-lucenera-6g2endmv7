@@ -17,7 +17,13 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
       const { data } = await supabase
         .from('controle_ponto')
         .select('*, funcionarios!inner(nome)')
-        .in('status', ['ausente', 'meio_periodo'])
+        .in('status', [
+          'ausente',
+          'meio_periodo',
+          'falta_injustificada',
+          'atestado',
+          'licenca_maternidade',
+        ])
         .gte('data', format(new Date(date.getFullYear(), date.getMonth(), 1), 'yyyy-MM-dd'))
         .lte('data', format(new Date(date.getFullYear(), date.getMonth() + 1, 0), 'yyyy-MM-dd'))
 
@@ -94,17 +100,26 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
                 <span className="w-3 h-3 rounded-full bg-red-500"></span> Faltas / Ausências
               </h4>
               <ul className="text-sm space-y-2">
-                {logs.map((l) => (
-                  <li key={l.id} className="flex items-center gap-2">
-                    <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs">
-                      {format(parseISO(l.data), 'dd/MM')}
-                    </span>
-                    <span className="font-medium">{l.funcionarios?.nome}</span>
-                    <span className="text-muted-foreground text-xs">
-                      - {l.justificativa || l.status}
-                    </span>
-                  </li>
-                ))}
+                {logs.map((l) => {
+                  const statusMap: Record<string, string> = {
+                    ausente: 'Falta Integral',
+                    meio_periodo: 'Meio Período',
+                    falta_injustificada: 'Falta Injustificada',
+                    atestado: 'Atestado Médico',
+                    licenca_maternidade: 'Licença Maternidade',
+                  }
+                  return (
+                    <li key={l.id} className="flex items-center gap-2">
+                      <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs">
+                        {format(parseISO(l.data), 'dd/MM')}
+                      </span>
+                      <span className="font-medium">{l.funcionarios?.nome}</span>
+                      <span className="text-muted-foreground text-xs">
+                        - {l.justificativa || statusMap[l.status] || l.status}
+                      </span>
+                    </li>
+                  )
+                })}
                 {logs.length === 0 && (
                   <li className="text-muted-foreground italic text-xs">
                     Nenhuma falta registrada.
