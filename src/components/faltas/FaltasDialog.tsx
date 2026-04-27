@@ -46,19 +46,22 @@ export function FaltasDialog({
   const [status, setStatus] = useState('ausente')
   const [justificativa, setJustificativa] = useState('')
 
-  const isAdmin = user?.app_role === 'admin' || user?.app_role === 'gerente'
-
   useEffect(() => {
     if (open) {
-      if (isAdmin && !record) {
-        supabase
-          .from('funcionarios_rh')
-          .select('id, nome')
-          .order('nome')
-          .then(({ data }) => {
-            if (data) setFuncionarios(data)
-          })
+      let query = supabase.from('funcionarios').select('id, nome').order('nome')
+
+      if (!record) {
+        query = query.eq('status', 'Ativo')
       }
+
+      query.then(({ data }) => {
+        if (data) {
+          setFuncionarios(data)
+          if (!record && data.length === 1) {
+            setFuncionarioId(data[0].id)
+          }
+        }
+      })
 
       if (record) {
         setFuncionarioId(record.funcionario_id)
@@ -72,7 +75,7 @@ export function FaltasDialog({
         setJustificativa('')
       }
     }
-  }, [open, record, isAdmin, user])
+  }, [open, record, user])
 
   const handleSave = async () => {
     if (!funcionarioId || !data) {
