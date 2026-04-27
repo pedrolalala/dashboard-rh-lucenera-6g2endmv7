@@ -74,7 +74,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           phone: employee.phone,
           cpf: employee.cpf,
           admissionDate: employee.admissionDate,
-          data_aniversario: (employee as any).data_aniversario || '',
+          data_aniversario: employee.data_aniversario || '',
           departmentId: employee.departmentId,
           role: employee.role,
           salary: employee.salary,
