@@ -46,7 +46,11 @@ export function VacationForm({ open, onOpenChange, onSuccess }: VacationFormProp
   useEffect(() => {
     if (open) {
       const fetchEmps = async () => {
-        let query = supabase.from('funcionarios_rh').select('id, nome')
+        let query = supabase
+          .from('funcionarios')
+          .select('id, nome')
+          .eq('status', 'Ativo')
+          .order('nome')
         if (user?.app_role === 'funcionario' && user.funcionario_id) {
           query = query.eq('id', user.funcionario_id)
         }
