@@ -12,14 +12,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
-interface ExtendedEmployee extends Employee {
-  salario_liquido?: number
-  endereco_completo?: string
-}
-
 interface EmployeeTableProps {
-  data: ExtendedEmployee[]
-  onEdit: (employee: ExtendedEmployee) => void
+  data: Employee[]
+  onEdit: (employee: Employee) => void
   onDelete: (id: string) => void
 }
 

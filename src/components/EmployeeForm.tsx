@@ -39,13 +39,8 @@ const schema = z.object({
   empresa: z.string().optional(),
 })
 
-interface ExtendedEmployee extends Employee {
-  salario_liquido?: number
-  endereco_completo?: string
-}
-
 interface EmployeeFormProps {
-  employee?: ExtendedEmployee
+  employee?: Employee
   departments: { id: string; nome: string }[]
   onSubmit: (data: z.infer<typeof schema>) => void
   onCancel: () => void

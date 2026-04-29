@@ -46,9 +46,11 @@ export type Employee = {
   email: string
   phone: string
   cpf: string
+  endereco_completo?: string
   admissionDate: string
   data_aniversario?: string
   salary: number
+  salario_liquido?: number
   comissao_padrao?: number
   empresa?: string
 }
@@ -80,6 +82,7 @@ export default function Funcionarios() {
           email: d.email,
           phone: d.telefone || '',
           cpf: d.cpf || '',
+          endereco_completo: d.endereco_completo || '',
           admissionDate: d.data_admissao
             ? new Date(d.data_admissao).toISOString().split('T')[0]
             : '',
@@ -90,6 +93,7 @@ export default function Funcionarios() {
           departmentName: d.departamentos?.nome || 'Sem Departamento',
           role: d.cargo || '',
           salary: Number(d.salario_base) || 0,
+          salario_liquido: Number(d.salario_liquido) || 0,
           comissao_padrao: Number(d.comissao_padrao) || 0,
           status: (d.status as 'Ativo' | 'Inativo') || 'Ativo',
           empresa: d.empresa || '',
@@ -161,11 +165,13 @@ export default function Funcionarios() {
       email: data.email,
       telefone: data.phone,
       cpf: data.cpf,
+      endereco_completo: data.endereco_completo || null,
       data_admissao: data.admissionDate ? data.admissionDate : null,
       data_aniversario: data.data_aniversario ? data.data_aniversario : null,
       departamento_id: data.departmentId,
       cargo: data.role,
       salario_base: data.salary,
+      salario_liquido: data.salario_liquido || 0,
       comissao_padrao: data.comissao_padrao,
       status: data.status,
       empresa: data.empresa,
