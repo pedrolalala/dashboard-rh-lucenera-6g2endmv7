@@ -31,13 +31,18 @@ const schema = z.object({
   departmentId: z.string().min(1, 'Selecione um departamento.'),
   role: z.string().optional(),
   salary: z.coerce.number().optional(),
+  salario_liquido: z.coerce.number().optional(),
   comissao_padrao: z.coerce.number().optional(),
   status: z.enum(['Ativo', 'Inativo']),
   empresa: z.string().optional(),
 })
 
+interface ExtendedEmployee extends Employee {
+  salario_liquido?: number
+}
+
 interface EmployeeFormProps {
-  employee?: Employee
+  employee?: ExtendedEmployee
   departments: { id: string; nome: string }[]
   onSubmit: (data: z.infer<typeof schema>) => void
   onCancel: () => void
@@ -78,6 +83,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           departmentId: employee.departmentId,
           role: employee.role,
           salary: employee.salary,
+          salario_liquido: employee.salario_liquido,
           comissao_padrao: employee.comissao_padrao,
           status: employee.status,
           empresa: employee.empresa,
@@ -92,6 +98,7 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           departmentId: '',
           role: '',
           salary: 0,
+          salario_liquido: 0,
           comissao_padrao: 0,
           status: 'Ativo',
           empresa: '',
@@ -184,6 +191,12 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
             placeholder="Ex: Analista Pleno"
           />
           <Field control={form.control} name="salary" label="Salário Base (R$)" type="number" />
+          <Field
+            control={form.control}
+            name="salario_liquido"
+            label="Salário Líquido (R$)"
+            type="number"
+          />
           <Field
             control={form.control}
             name="comissao_padrao"

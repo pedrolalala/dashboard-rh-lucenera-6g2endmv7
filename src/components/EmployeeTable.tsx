@@ -12,9 +12,13 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
+interface ExtendedEmployee extends Employee {
+  salario_liquido?: number
+}
+
 interface EmployeeTableProps {
-  data: Employee[]
-  onEdit: (employee: Employee) => void
+  data: ExtendedEmployee[]
+  onEdit: (employee: ExtendedEmployee) => void
   onDelete: (id: string) => void
 }
 
@@ -28,6 +32,7 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
           <TableHead>Departamento</TableHead>
           <TableHead>Empresa</TableHead>
           <TableHead>Cargo</TableHead>
+          <TableHead>Salários</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
@@ -64,6 +69,14 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
             <TableCell>{emp.departmentName}</TableCell>
             <TableCell>{emp.empresa || '-'}</TableCell>
             <TableCell>{emp.role || '-'}</TableCell>
+            <TableCell>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">R$ {Number(emp.salary || 0).toFixed(2)}</span>
+                <span className="text-xs text-muted-foreground">
+                  Líq: R$ {Number(emp.salario_liquido || 0).toFixed(2)}
+                </span>
+              </div>
+            </TableCell>
             <TableCell>
               <Badge
                 variant={emp.status === 'Ativo' ? 'default' : 'outline'}
