@@ -5,6 +5,7 @@ import { type Employee } from '@/pages/Funcionarios'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ const schema = z.object({
   email: z.string().email('E-mail inválido. Insira um e-mail válido.'),
   phone: z.string().optional(),
   cpf: z.string().optional(),
+  endereco_completo: z.string().optional(),
   admissionDate: z.string().optional(),
   data_aniversario: z.string().optional(),
   departmentId: z.string().min(1, 'Selecione um departamento.'),
@@ -39,6 +41,7 @@ const schema = z.object({
 
 interface ExtendedEmployee extends Employee {
   salario_liquido?: number
+  endereco_completo?: string
 }
 
 interface EmployeeFormProps {
@@ -76,23 +79,25 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
       ? {
           name: employee.name,
           email: employee.email,
-          phone: employee.phone,
-          cpf: employee.cpf,
-          admissionDate: employee.admissionDate,
+          phone: employee.phone || '',
+          cpf: employee.cpf || '',
+          endereco_completo: employee.endereco_completo || '',
+          admissionDate: employee.admissionDate || '',
           data_aniversario: employee.data_aniversario || '',
           departmentId: employee.departmentId,
-          role: employee.role,
-          salary: employee.salary,
-          salario_liquido: employee.salario_liquido,
-          comissao_padrao: employee.comissao_padrao,
+          role: employee.role || '',
+          salary: employee.salary || 0,
+          salario_liquido: employee.salario_liquido || 0,
+          comissao_padrao: employee.comissao_padrao || 0,
           status: employee.status,
-          empresa: employee.empresa,
+          empresa: employee.empresa || '',
         }
       : {
           name: '',
           email: '',
           phone: '',
           cpf: '',
+          endereco_completo: '',
           admissionDate: '',
           data_aniversario: '',
           departmentId: '',
@@ -114,6 +119,27 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           label="Nome Completo *"
           placeholder="Ex: João da Silva"
         />
+
+        <FormField
+          control={form.control}
+          name="endereco_completo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="uppercase text-[10px] tracking-widest">
+                Endereço Completo (com CEP)
+              </FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Rua, Número, Complemento, Bairro, Cidade - UF, CEP"
+                  className="resize-none"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field
             control={form.control}

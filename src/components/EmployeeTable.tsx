@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 interface ExtendedEmployee extends Employee {
   salario_liquido?: number
+  endereco_completo?: string
 }
 
 interface EmployeeTableProps {
@@ -28,7 +29,7 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
       <TableHeader className="bg-muted/10">
         <TableRow>
           <TableHead>Colaborador</TableHead>
-          <TableHead>Contato</TableHead>
+          <TableHead>Contato & Endereço</TableHead>
           <TableHead>Departamento</TableHead>
           <TableHead>Empresa</TableHead>
           <TableHead>Cargo</TableHead>
@@ -41,7 +42,7 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
         {data.length === 0 && (
           <TableRow>
             <TableCell
-              colSpan={6}
+              colSpan={8}
               className="h-24 text-center text-muted-foreground uppercase tracking-widest text-xs"
             >
               Nenhum colaborador encontrado.
@@ -61,9 +62,20 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
               </div>
             </TableCell>
             <TableCell>
-              <div className="flex flex-col">
+              <div className="flex flex-col gap-0.5">
                 <span className="text-sm">{emp.email}</span>
-                <span className="text-xs text-muted-foreground">{emp.phone || '-'}</span>
+                <div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+                  {emp.phone && <span>{emp.phone}</span>}
+                  {emp.cpf && <span>CPF: {emp.cpf}</span>}
+                </div>
+                {emp.endereco_completo && (
+                  <span
+                    className="text-xs text-muted-foreground line-clamp-1"
+                    title={emp.endereco_completo}
+                  >
+                    {emp.endereco_completo}
+                  </span>
+                )}
               </div>
             </TableCell>
             <TableCell>{emp.departmentName}</TableCell>
