@@ -27,8 +27,8 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
           <TableHead>Contato & Endereço</TableHead>
           <TableHead>Departamento</TableHead>
           <TableHead>Empresa</TableHead>
-          <TableHead>Cargo</TableHead>
-          <TableHead>Salários</TableHead>
+          <TableHead>Cargo & Contrato</TableHead>
+          <TableHead>Remuneração</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
@@ -75,13 +75,32 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
             </TableCell>
             <TableCell>{emp.departmentName}</TableCell>
             <TableCell>{emp.empresa || '-'}</TableCell>
-            <TableCell>{emp.role || '-'}</TableCell>
             <TableCell>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">R$ {Number(emp.salary || 0).toFixed(2)}</span>
+              <div className="flex flex-col gap-0.5 items-start">
+                <span className="text-sm">{emp.role || '-'}</span>
+                {emp.tipo_contratacao && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-1 py-0 h-4 uppercase tracking-wider"
+                  >
+                    {emp.tipo_contratacao}
+                  </Badge>
+                )}
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium">
+                  Base: R$ {Number(emp.salary || 0).toFixed(2)}
+                </span>
                 <span className="text-xs text-muted-foreground">
                   Líq: R$ {Number(emp.salario_liquido || 0).toFixed(2)}
                 </span>
+                {Number(emp.salario_por_fora) > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    Extra: R$ {Number(emp.salario_por_fora).toFixed(2)}
+                  </span>
+                )}
               </div>
             </TableCell>
             <TableCell>

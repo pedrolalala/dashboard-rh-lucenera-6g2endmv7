@@ -53,6 +53,8 @@ export type Employee = {
   salario_liquido?: number
   comissao_padrao?: number
   empresa?: string
+  salario_por_fora?: number
+  tipo_contratacao?: string
 }
 
 export default function Funcionarios() {
@@ -97,6 +99,8 @@ export default function Funcionarios() {
           comissao_padrao: Number(d.comissao_padrao) || 0,
           status: (d.status as 'Ativo' | 'Inativo') || 'Ativo',
           empresa: d.empresa || '',
+          salario_por_fora: Number(d.salario_por_fora) || 0,
+          tipo_contratacao: d.tipo_contratacao || '',
         })),
       )
     }
@@ -175,6 +179,8 @@ export default function Funcionarios() {
       comissao_padrao: data.comissao_padrao,
       status: data.status,
       empresa: data.empresa,
+      salario_por_fora: data.salario_por_fora || 0,
+      tipo_contratacao: data.tipo_contratacao || null,
     }
 
     if (editingEmp) {

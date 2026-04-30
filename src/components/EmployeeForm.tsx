@@ -37,6 +37,8 @@ const schema = z.object({
   comissao_padrao: z.coerce.number().optional(),
   status: z.enum(['Ativo', 'Inativo']),
   empresa: z.string().optional(),
+  salario_por_fora: z.coerce.number().optional(),
+  tipo_contratacao: z.string().optional(),
 })
 
 interface EmployeeFormProps {
@@ -86,6 +88,8 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           comissao_padrao: employee.comissao_padrao || 0,
           status: employee.status,
           empresa: employee.empresa || '',
+          salario_por_fora: employee.salario_por_fora || 0,
+          tipo_contratacao: employee.tipo_contratacao || '',
         }
       : {
           name: '',
@@ -102,6 +106,8 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           comissao_padrao: 0,
           status: 'Ativo',
           empresa: '',
+          salario_por_fora: 0,
+          tipo_contratacao: '',
         },
   })
 
@@ -223,6 +229,36 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
             name="comissao_padrao"
             label="Comissão Padrão (%)"
             type="number"
+          />
+          <Field
+            control={form.control}
+            name="salario_por_fora"
+            label="Salário por Fora (R$)"
+            type="number"
+            placeholder="0.00"
+          />
+          <FormField
+            control={form.control}
+            name="tipo_contratacao"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="uppercase text-[10px] tracking-widest">
+                  Tipo de Contratação
+                </FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="CLT">CLT</SelectItem>
+                    <SelectItem value="PJ">PJ</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
         <FormField
