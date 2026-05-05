@@ -146,7 +146,7 @@ export function FaltasDialog({
           status,
           justificativa,
         }
-        const { error } = await supabase.from('controle_ponto').update(payload).eq('id', record.id)
+        const { error } = await supabase.from('controle_falta').update(payload).eq('id', record.id)
         if (error) throw error
       } else {
         const start = new Date(data + 'T12:00:00')
@@ -174,7 +174,7 @@ export function FaltasDialog({
           }
 
           const { data: existing } = await supabase
-            .from('controle_ponto')
+            .from('controle_falta')
             .select('id')
             .eq('funcionario_id', funcionarioId)
             .eq('data', d)
@@ -182,12 +182,12 @@ export function FaltasDialog({
 
           if (existing) {
             const { error } = await supabase
-              .from('controle_ponto')
+              .from('controle_falta')
               .update(payload)
               .eq('id', existing.id)
             if (error) throw error
           } else {
-            const { error } = await supabase.from('controle_ponto').insert(payload)
+            const { error } = await supabase.from('controle_falta').insert(payload)
             if (error) throw error
           }
         }

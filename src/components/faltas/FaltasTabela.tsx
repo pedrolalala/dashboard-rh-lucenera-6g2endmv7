@@ -107,7 +107,7 @@ export function FaltasTabela({
     if (!user) return
     setIsLoading(true)
     let query = supabase
-      .from('controle_ponto')
+      .from('controle_falta')
       .select('*, funcionarios!inner(nome, departamentos(nome))')
       .in('status', Object.keys(STATUS_CONFIG))
       .order('data', { ascending: false })
@@ -145,7 +145,7 @@ export function FaltasTabela({
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Deseja realmente remover este registro?')) return
-    const { error } = await supabase.from('controle_ponto').delete().eq('id', id)
+    const { error } = await supabase.from('controle_falta').delete().eq('id', id)
     if (error) {
       toast({ title: 'Erro ao remover', description: error.message, variant: 'destructive' })
     } else {

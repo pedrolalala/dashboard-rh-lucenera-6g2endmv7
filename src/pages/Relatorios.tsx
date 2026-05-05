@@ -296,7 +296,7 @@ export default function Relatorios() {
               ? 'ferias'
               : reportType === 'avaliacoes'
                 ? 'avaliacoes'
-                : 'controle_ponto'
+                : 'controle_falta'
           let query = supabase
             .from(table as any)
             .select('*, funcionarios(nome, departamento_id, departamentos(nome))')

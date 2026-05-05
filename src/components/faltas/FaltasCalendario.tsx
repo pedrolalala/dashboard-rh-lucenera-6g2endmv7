@@ -28,7 +28,7 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
   useEffect(() => {
     async function fetchLogs() {
       const { data } = await supabase
-        .from('controle_ponto')
+        .from('controle_falta')
         .select('*, funcionarios!inner(nome)')
         .in('status', Object.keys(STATUS_MAP))
         .gte('data', format(new Date(date.getFullYear(), date.getMonth(), 1), 'yyyy-MM-dd'))

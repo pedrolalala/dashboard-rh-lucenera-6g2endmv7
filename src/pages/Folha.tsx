@@ -126,7 +126,7 @@ export default function FolhaPagamento() {
       })
 
       const { data: faltas } = await supabase
-        .from('controle_ponto')
+        .from('controle_falta')
         .select('funcionario_id, status, data')
         .gte('data', format(start, 'yyyy-MM-dd'))
         .lte('data', format(end, 'yyyy-MM-dd'))
