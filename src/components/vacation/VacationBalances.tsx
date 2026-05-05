@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase/client'
-import { format } from 'date-fns'
+import { format, addYears, differenceInDays } from 'date-fns'
 import { useAuth } from '@/hooks/use-auth'
 import { Loader2, AlertCircle, CalendarDays, UserX, CheckCircle2, Clock } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -9,23 +9,39 @@ import { Badge } from '@/components/ui/badge'
 
 export function VacationBalances() {
   const [balances, setBalances] = useState<any[]>([])
+  const [funcionarios, setFuncionarios] = useState<Record<string, any>>({})
   const [isLoading, setIsLoading] = useState(true)
   const { user } = useAuth()
 
   useEffect(() => {
-    setIsLoading(true)
-    let query = supabase.from('vw_controle_ferias_clt').select('*')
-    if (user?.app_role === 'funcionario' && user.funcionario_id) {
-      query = query.eq('funcionario_id', user.funcionario_id)
-    }
-    query.then(({ data }) => {
+    const fetchData = async () => {
+      setIsLoading(true)
+
+      const { data: funcs } = await supabase.from('funcionarios').select('id, data_admissao')
+      const funcMap = (funcs || []).reduce((acc: any, f: any) => {
+        acc[f.id] = f
+        return acc
+      }, {})
+      setFuncionarios(funcMap)
+
+      let query = supabase.from('vw_controle_ferias_clt').select('*')
+      if (user?.app_role === 'funcionario' && user.funcionario_id) {
+        query = query.eq('funcionario_id', user.funcionario_id)
+      }
+
+      const { data } = await query
       if (data) {
-        // Prioritize Thais Pegrucci and Tricia Silva
         const sortedData = data.sort((a, b) => {
           const aName = a.funcionario_nome?.toLowerCase() || ''
           const bName = b.funcionario_nome?.toLowerCase() || ''
-          const isAPriority = aName.includes('thais pegrucci') || aName.includes('tricia silva')
-          const isBPriority = bName.includes('thais pegrucci') || bName.includes('tricia silva')
+          const isAPriority =
+            aName.includes('thais pegrucci') ||
+            aName.includes('tricia silva') ||
+            aName.includes('trícia helena')
+          const isBPriority =
+            bName.includes('thais pegrucci') ||
+            bName.includes('tricia silva') ||
+            bName.includes('trícia helena')
           if (isAPriority && !isBPriority) return -1
           if (!isAPriority && isBPriority) return 1
 
@@ -36,23 +52,38 @@ export function VacationBalances() {
         setBalances(sortedData)
       }
       setIsLoading(false)
-    })
+    }
+    fetchData()
   }, [user])
 
-  const expiringBalances = balances.filter((b) => {
-    if (!b.data_limite_gozo || b.saldo_disponivel <= 0) return false
-    const limitDate = new Date(b.data_limite_gozo)
-    const today = new Date()
-    const diffDays = Math.ceil((limitDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    return diffDays <= 60 && diffDays >= 0
-  })
+  const getStatusInfo = (b: any) => {
+    const func = funcionarios[b.funcionario_id]
+    let isEmAquisicao = false
+    let dataElegibilidade = null
 
+    if (func?.data_admissao) {
+      dataElegibilidade = addYears(new Date(func.data_admissao), 1)
+      if (new Date() < dataElegibilidade) {
+        isEmAquisicao = true
+      }
+    }
+
+    let diffDays = Infinity
+    if (b.data_limite_gozo && b.saldo_disponivel > 0) {
+      diffDays = differenceInDays(new Date(b.data_limite_gozo), new Date())
+    }
+
+    const isAlerta = !isEmAquisicao && b.saldo_disponivel > 0 && diffDays <= 180
+    const isElegivel = !isEmAquisicao && b.saldo_disponivel > 0 && diffDays > 180
+    const isCritico = diffDays <= 60 && diffDays >= 0 && b.saldo_disponivel > 0
+
+    return { isEmAquisicao, dataElegibilidade, isAlerta, isElegivel, isCritico, diffDays }
+  }
+
+  const expiringBalances = balances.filter((b) => getStatusInfo(b).isCritico)
   const attentionBalances = balances.filter((b) => {
-    if (!b.data_limite_gozo || b.saldo_disponivel <= 0) return false
-    const limitDate = new Date(b.data_limite_gozo)
-    const today = new Date()
-    const diffDays = Math.ceil((limitDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    return diffDays > 60 && diffDays <= 180 // Between 2 and 6 months
+    const info = getStatusInfo(b)
+    return info.isAlerta && !info.isCritico
   })
 
   return (
@@ -80,8 +111,8 @@ export function VacationBalances() {
             Atenção: Férias a Vencer (Menos de 6 meses)
           </AlertTitle>
           <AlertDescription className="text-xs">
-            Há {attentionBalances.length} colaborador(es) entrando no período de atenção. Programe o
-            gozo com antecedência.
+            Há {attentionBalances.length} colaborador(es) com tag ALERTA entrando no período de
+            atenção. Programe o gozo com antecedência.
           </AlertDescription>
         </Alert>
       )}
@@ -103,30 +134,21 @@ export function VacationBalances() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {balances.map((b, i) => {
-            let isExpiring = false
-            let isAttention = false
-            let diffDays = Infinity
-
-            if (b.data_limite_gozo && b.saldo_disponivel > 0) {
-              const limitDate = new Date(b.data_limite_gozo)
-              diffDays = Math.ceil(
-                (limitDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
-              )
-              isExpiring = diffDays <= 60 && diffDays >= 0
-              isAttention = diffDays > 60 && diffDays <= 180
-            }
+            const { isEmAquisicao, dataElegibilidade, isAlerta, isElegivel, isCritico } =
+              getStatusInfo(b)
 
             const isPriority =
               b.funcionario_nome?.toLowerCase().includes('thais pegrucci') ||
-              b.funcionario_nome?.toLowerCase().includes('tricia silva')
+              b.funcionario_nome?.toLowerCase().includes('tricia silva') ||
+              b.funcionario_nome?.toLowerCase().includes('trícia helena')
 
             return (
               <Card
                 key={i}
                 className={`shadow-none rounded-none border transition-colors ${
-                  isExpiring
+                  isCritico
                     ? 'border-destructive/50 bg-destructive/5'
-                    : isAttention
+                    : isAlerta
                       ? 'border-amber-500/50 bg-amber-500/5'
                       : isPriority && b.saldo_disponivel > 0
                         ? 'border-primary/50 bg-primary/5'
@@ -141,36 +163,46 @@ export function VacationBalances() {
                     >
                       {b.funcionario_nome}
                     </CardTitle>
-                    {isExpiring && (
+
+                    {isEmAquisicao && (
                       <Badge
-                        variant="destructive"
-                        className="text-[9px] rounded-none px-1 uppercase shrink-0 h-5"
+                        variant="secondary"
+                        className="text-[9px] rounded-none px-1 uppercase shrink-0 h-5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                       >
-                        Crítico
+                        EM AQUISIÇÃO
                       </Badge>
                     )}
-                    {!isExpiring && isAttention && (
+
+                    {!isEmAquisicao && isAlerta && (
                       <Badge
-                        variant="outline"
-                        className="text-[9px] rounded-none px-1 uppercase border-amber-500 text-amber-600 shrink-0 h-5"
+                        variant={isCritico ? 'destructive' : 'outline'}
+                        className={`text-[9px] rounded-none px-1 uppercase shrink-0 h-5 ${!isCritico ? 'border-amber-500 text-amber-600' : ''}`}
                       >
-                        Atenção
+                        ALERTA
                       </Badge>
                     )}
-                    {!isExpiring && !isAttention && isPriority && b.saldo_disponivel > 0 && (
+
+                    {!isEmAquisicao && isElegivel && (
                       <Badge
                         variant="default"
-                        className="text-[9px] rounded-none px-1 uppercase shrink-0 h-5"
+                        className="text-[9px] rounded-none px-1 uppercase shrink-0 h-5 bg-green-600 hover:bg-green-700 text-white"
                       >
-                        Passivo
+                        ELEGÍVEL
                       </Badge>
                     )}
                   </div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-widest flex items-center gap-1 mt-1">
-                    <CalendarDays className="h-3 w-3" />
-                    {b.data_inicio ? format(new Date(b.data_inicio), 'dd/MM/yy') : ''} -{' '}
-                    {b.data_fim ? format(new Date(b.data_fim), 'dd/MM/yy') : ''}
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-widest flex items-center justify-between gap-1 mt-1">
+                    <div className="flex items-center gap-1">
+                      <CalendarDays className="h-3 w-3" />
+                      {b.data_inicio ? format(new Date(b.data_inicio), 'dd/MM/yy') : ''} -{' '}
+                      {b.data_fim ? format(new Date(b.data_fim), 'dd/MM/yy') : ''}
+                    </div>
                   </div>
+                  {isEmAquisicao && dataElegibilidade && (
+                    <div className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+                      Elegível a partir de: {format(dataElegibilidade, 'dd/MM/yyyy')}
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="pt-4 space-y-3">
                   <div className="flex justify-between items-center text-xs">
@@ -200,7 +232,7 @@ export function VacationBalances() {
                         Limite de Gozo
                       </span>
                       <span
-                        className={`text-xs font-medium ${isExpiring ? 'text-destructive' : isAttention ? 'text-amber-600' : ''}`}
+                        className={`text-xs font-medium ${isCritico ? 'text-destructive' : isAlerta ? 'text-amber-600' : ''}`}
                       >
                         {b.data_limite_gozo
                           ? format(new Date(b.data_limite_gozo), 'dd/MM/yyyy')

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { CalendarIcon, AlertTriangle } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, addYears } from 'date-fns'
 import {
   Dialog,
   DialogContent,
@@ -55,7 +55,7 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
       const fetchEmps = async () => {
         let query = supabase
           .from('funcionarios')
-          .select('id, nome')
+          .select('id, nome, data_admissao')
           .eq('status', 'Ativo')
           .order('nome')
         if (user?.app_role === 'funcionario' && user.funcionario_id) {
@@ -63,7 +63,9 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
         }
         const { data } = await query
         if (data) {
-          setEmployees(data.map((d) => ({ id: d.id, name: d.nome })))
+          setEmployees(
+            data.map((d: any) => ({ id: d.id, name: d.nome, dataAdmissao: d.data_admissao })),
+          )
           if (requestToEdit) {
             setEmployeeId(requestToEdit.employeeId)
             setStartDate(requestToEdit.startDate)
@@ -125,6 +127,26 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
 
   const isExceedingBalance =
     selectedBalance && calculatedDays > (selectedBalance.saldo_disponivel || 0)
+
+  const selectedEmployee = useMemo(
+    () => employees.find((e) => e.id === employeeId),
+    [employees, employeeId],
+  )
+  const dataElegibilidade = useMemo(() => {
+    if (selectedEmployee?.dataAdmissao) {
+      return addYears(new Date(selectedEmployee.dataAdmissao), 1)
+    }
+    return null
+  }, [selectedEmployee])
+
+  const isEmAquisicao = useMemo(() => {
+    if (dataElegibilidade) {
+      return new Date() < dataElegibilidade
+    }
+    return false
+  }, [dataElegibilidade])
+
+  const isBloqueadoAquisicao = isEmAquisicao && user?.app_role !== 'admin'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -329,11 +351,22 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             </Alert>
           )}
 
-          {!periodoId && employeeId && balances.length === 0 && (
+          {!periodoId && employeeId && balances.length === 0 && !isEmAquisicao && (
             <Alert variant="destructive" className="rounded-none border-border mt-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-[10px] uppercase tracking-widest ml-2">
                 Não há períodos aquisitivos ativos para este colaborador. O registro é bloqueado.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {isEmAquisicao && (
+            <Alert variant="destructive" className="rounded-none border-border mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-[10px] uppercase tracking-widest ml-2">
+                EM AQUISIÇÃO: Colaborador com menos de 1 ano de empresa. Elegível a partir de{' '}
+                {dataElegibilidade ? format(dataElegibilidade, 'dd/MM/yyyy') : ''}.
+                {isBloqueadoAquisicao ? ' Agendamento bloqueado.' : ' (ADMIN: Bloqueio ignorado)'}
               </AlertDescription>
             </Alert>
           )}
@@ -349,7 +382,13 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             </Button>
             <Button
               type="submit"
-              disabled={!employeeId || !periodoId || calculatedDays <= 0 || isExceedingBalance}
+              disabled={
+                !employeeId ||
+                !periodoId ||
+                calculatedDays <= 0 ||
+                isExceedingBalance ||
+                isBloqueadoAquisicao
+              }
               className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-none text-xs uppercase tracking-widest"
             >
               {requestToEdit ? 'Salvar' : 'Solicitar'}
