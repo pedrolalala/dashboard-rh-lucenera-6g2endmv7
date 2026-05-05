@@ -4,7 +4,7 @@ DECLARE
 BEGIN
   -- Identifica registros duplicados e consolida mantendo apenas o de menor ID
   FOR dup IN (
-    SELECT funcionario_id, data_inicio, data_fim, MIN(id) as keep_id
+    SELECT funcionario_id, data_inicio, data_fim, MIN(id::text)::uuid as keep_id
     FROM public.periodos_aquisitivos
     GROUP BY funcionario_id, data_inicio, data_fim
     HAVING COUNT(*) > 1
