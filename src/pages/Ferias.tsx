@@ -29,6 +29,7 @@ export interface VacationRequest {
   endDate: Date
   days: number
   status: VacationStatus
+  periodoId?: string
 }
 
 export default function Ferias() {
@@ -60,6 +61,7 @@ export default function Ferias() {
           endDate: new Date(d.data_fim),
           days: d.dias,
           status: (d.status as VacationStatus) || 'Pendente',
+          periodoId: d.periodo_aquisitivo_id,
         })),
       )
     }

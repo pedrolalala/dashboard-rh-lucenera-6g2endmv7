@@ -25,6 +25,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
+import { useToast } from '@/hooks/use-toast'
 import type { VacationRequest } from '@/pages/Ferias'
 
 interface EmployeeOption {
@@ -47,6 +48,7 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
   const [employees, setEmployees] = useState<EmployeeOption[]>([])
   const [balances, setBalances] = useState<any[]>([])
   const { user } = useAuth()
+  const { toast } = useToast()
 
   useEffect(() => {
     if (open) {
@@ -66,6 +68,9 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             setEmployeeId(requestToEdit.employeeId)
             setStartDate(requestToEdit.startDate)
             setEndDate(requestToEdit.endDate)
+            if (requestToEdit.periodoId) {
+              setPeriodoId(requestToEdit.periodoId)
+            }
           } else if (user?.app_role === 'funcionario' && user.funcionario_id) {
             setEmployeeId(user.funcionario_id)
           }
@@ -92,11 +97,13 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
           setBalances(data || [])
           if (data && data.length > 0 && !requestToEdit) {
             setPeriodoId(data[0].periodo_id)
+          } else if (requestToEdit && requestToEdit.periodoId) {
+            setPeriodoId(requestToEdit.periodoId)
           }
         })
     } else {
       setBalances([])
-      setPeriodoId('')
+      if (!requestToEdit) setPeriodoId('')
     }
   }, [employeeId, open, requestToEdit])
 
@@ -122,13 +129,21 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!employeeId || !startDate || !endDate || calculatedDays <= 0) return
+    if (!periodoId) {
+      toast({
+        title: 'Período obrigatório',
+        description: 'É necessário identificar e selecionar um período aquisitivo ativo.',
+        variant: 'destructive',
+      })
+      return
+    }
     if (isExceedingBalance) return
 
     if (requestToEdit) {
       const { error } = await supabase
         .from('ferias')
         .update({
-          periodo_aquisitivo_id: periodoId || null,
+          periodo_aquisitivo_id: periodoId,
           data_inicio: format(startDate, 'yyyy-MM-dd'),
           data_fim: format(endDate, 'yyyy-MM-dd'),
           dias: calculatedDays,
@@ -138,11 +153,13 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
       if (!error) {
         onSuccess()
         onOpenChange(false)
+      } else {
+        toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
       }
     } else {
       const { error } = await supabase.from('ferias').insert({
         funcionario_id: employeeId,
-        periodo_aquisitivo_id: periodoId || null,
+        periodo_aquisitivo_id: periodoId,
         data_inicio: format(startDate, 'yyyy-MM-dd'),
         data_fim: format(endDate, 'yyyy-MM-dd'),
         dias: calculatedDays,
@@ -152,6 +169,8 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
       if (!error) {
         onSuccess()
         onOpenChange(false)
+      } else {
+        toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' })
       }
     }
   }
@@ -308,6 +327,15 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             </Alert>
           )}
 
+          {!periodoId && employeeId && balances.length === 0 && (
+            <Alert variant="destructive" className="rounded-none border-border mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-[10px] uppercase tracking-widest ml-2">
+                Não há períodos aquisitivos ativos para este colaborador. O registro é bloqueado.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <DialogFooter className="pt-4 border-t border-border">
             <Button
               type="button"
@@ -319,7 +347,7 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             </Button>
             <Button
               type="submit"
-              disabled={!employeeId || calculatedDays <= 0 || isExceedingBalance}
+              disabled={!employeeId || !periodoId || calculatedDays <= 0 || isExceedingBalance}
               className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-none text-xs uppercase tracking-widest"
             >
               {requestToEdit ? 'Salvar' : 'Solicitar'}
