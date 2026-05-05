@@ -14,6 +14,8 @@ import {
 } from 'recharts'
 import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { supabase } from '@/lib/supabase/client'
@@ -25,6 +27,7 @@ export default function Index() {
   const [configForChart, setConfigForChart] = useState<any>({})
   const [recentActivities, setRecentActivities] = useState<any[]>([])
   const [absenteismoData, setAbsenteismoData] = useState<any[]>([])
+  const [expiringVacations, setExpiringVacations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
@@ -136,6 +139,24 @@ export default function Index() {
           { name: 'Faltas Injustificadas', value: inj, fill: 'hsl(var(--destructive))' },
           { name: 'Atestados / Abonados', value: atest, fill: 'hsl(var(--primary))' },
         ])
+
+        // Férias a vencer
+        const { data: saldos } = await supabase
+          .from('vw_controle_ferias_clt')
+          .select('*')
+          .gt('saldo_disponivel', 0)
+        if (saldos) {
+          const expiring = saldos.filter((s) => {
+            if (!s.data_limite_gozo) return false
+            const limitDate = new Date(s.data_limite_gozo)
+            const today = new Date()
+            const diffDays = Math.ceil(
+              (limitDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+            )
+            return diffDays <= 60 && diffDays >= 0
+          })
+          setExpiringVacations(expiring)
+        }
       }
       setLoading(false)
     }
@@ -144,6 +165,31 @@ export default function Index() {
 
   return (
     <div className="space-y-6">
+      {expiringVacations.length > 0 && (
+        <Alert
+          variant="destructive"
+          className="border-destructive/50 bg-destructive/10 text-destructive animate-fade-in-down"
+        >
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle className="uppercase tracking-widest text-xs font-bold mb-2">
+            Atenção: Férias a Vencer
+          </AlertTitle>
+          <AlertDescription className="text-xs">
+            Há {expiringVacations.length} colaborador(es) com limite de gozo de férias nos próximos
+            60 dias.
+            <ul className="mt-2 list-disc list-inside space-y-1">
+              {expiringVacations.map((f, i) => (
+                <li key={i}>
+                  <span className="font-semibold">{f.funcionario_nome}</span> - Saldo:{' '}
+                  {f.saldo_disponivel} dias - Vence em:{' '}
+                  {format(new Date(f.data_limite_gozo), 'dd/MM/yyyy')}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-light tracking-widest uppercase text-foreground">
