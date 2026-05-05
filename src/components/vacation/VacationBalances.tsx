@@ -33,7 +33,35 @@ export function VacationBalances() {
 
       const { data } = await query
       if (data) {
-        const sortedData = data.sort((a, b) => {
+        const consolidatedMap = data.reduce((acc: any, curr: any) => {
+          const fid = curr.funcionario_id
+          if (!acc[fid]) {
+            acc[fid] = { ...curr }
+          } else {
+            acc[fid].dias_direito = (acc[fid].dias_direito || 0) + (curr.dias_direito || 0)
+            acc[fid].dias_gozados = (acc[fid].dias_gozados || 0) + (curr.dias_gozados || 0)
+            acc[fid].saldo_disponivel =
+              (acc[fid].saldo_disponivel || 0) + (curr.saldo_disponivel || 0)
+            acc[fid].total_faltas = (acc[fid].total_faltas || 0) + (curr.total_faltas || 0)
+
+            if (curr.data_limite_gozo) {
+              const currentLimit = new Date(curr.data_limite_gozo).getTime()
+              const accLimit = acc[fid].data_limite_gozo
+                ? new Date(acc[fid].data_limite_gozo).getTime()
+                : Infinity
+              if (currentLimit < accLimit) {
+                acc[fid].data_limite_gozo = curr.data_limite_gozo
+                acc[fid].data_inicio = curr.data_inicio
+                acc[fid].data_fim = curr.data_fim
+              }
+            }
+          }
+          return acc
+        }, {})
+
+        const consolidatedData: any[] = Object.values(consolidatedMap)
+
+        const sortedData = consolidatedData.sort((a, b) => {
           const aName = a.funcionario_nome?.toLowerCase() || ''
           const bName = b.funcionario_nome?.toLowerCase() || ''
           const isAPriority =
@@ -126,7 +154,7 @@ export function VacationBalances() {
 
       <div className="flex items-center justify-between border-b border-border pb-2">
         <h2 className="text-sm font-light uppercase tracking-widest text-foreground">
-          Saldos de Férias (Cards de Período)
+          Saldos de Férias (Consolidado por Funcionário)
         </h2>
       </div>
 
@@ -140,7 +168,7 @@ export function VacationBalances() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {balances.map((b, i) => {
+          {balances.map((b) => {
             const { isEmAquisicao, dataElegibilidade, isAlerta, isElegivel, isCritico } =
               getStatusInfo(b)
 
@@ -151,7 +179,7 @@ export function VacationBalances() {
 
             return (
               <Card
-                key={i}
+                key={b.funcionario_id || b.id || Math.random()}
                 className={`shadow-none rounded-none border transition-colors ${
                   isCritico
                     ? 'border-destructive/50 bg-destructive/5'
