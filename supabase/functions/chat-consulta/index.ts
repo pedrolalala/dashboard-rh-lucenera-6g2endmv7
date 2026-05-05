@@ -35,36 +35,115 @@ Deno.serve(async (req: Request) => {
       global: { headers: { Authorization: authHeader } },
     })
 
-    // Buscar contexto no banco de dados
-    const { data: projetos, error: projetosError } = await supabaseClient
-      .from('projetos')
-      .select('nome, responsavel, status, prazo, valor, observacoes')
+    // Obter dados do usuário logado
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser()
 
-    const { data: precos, error: precosError } = await supabaseClient
-      .from('tabela_precos')
-      .select('servico, categoria, preco, vigencia, observacao')
-
-    if (projetosError || precosError) {
-      console.error('Erro ao acessar o banco de dados:', projetosError || precosError)
+    if (userError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Erro ao buscar dados de contexto no banco de dados.' }),
+        JSON.stringify({ error: 'Não foi possível autenticar o usuário no chat.' }),
         {
-          status: 500,
+          status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       )
     }
 
-    const systemPrompt = `Você é um assistente virtual inteligente de um portal corporativo.
-Responda à pergunta do usuário de forma clara, objetiva e profissional, baseando-se EXCLUSIVAMENTE nos dados em JSON fornecidos abaixo.
-Formate sua resposta em texto simples, utilizando quebras de linha e marcadores clássicos (como • ou -) para listas, caso seja necessário listar itens. Não utilize formatações complexas de Markdown (como asteriscos ** para negrito).
-Se a informação necessária para responder não constar nos dados abaixo, informe educadamente que você não possui essa informação no momento e não invente dados.
+    // Identificar role do usuário
+    const { data: userData } = await supabaseClient
+      .from('usuarios')
+      .select('role')
+      .eq('id', user.id)
+      .single()
 
-=== DADOS DE PROJETOS ===
-${JSON.stringify(projetos)}
+    const role = userData?.role || 'funcionario'
 
-=== DADOS DE TABELA DE PREÇOS ===
-${JSON.stringify(precos)}`
+    // Identificar funcionario_id caso seja colaborador
+    const { data: funcData } = await supabaseClient
+      .from('funcionarios')
+      .select('id')
+      .eq('usuario_id', user.id)
+      .maybeSingle()
+
+    const funcionarioId = funcData?.id
+
+    // Preparar queries baseadas no perfil
+    let feriasQuery = supabaseClient.from('vw_controle_ferias_clt').select('*')
+    let faltasQuery = supabaseClient
+      .from('vw_historico_faltas')
+      .select('*')
+      .order('data_falta', { ascending: false })
+      .limit(100)
+
+    if (role === 'funcionario' || role === 'viewer') {
+      if (!funcionarioId) {
+        return new Response(
+          JSON.stringify({
+            reply:
+              'Seu perfil de colaborador ainda não foi vinculado a um registro de funcionário no sistema. Procure o RH.',
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+      feriasQuery = feriasQuery.eq('funcionario_id', funcionarioId)
+      faltasQuery = faltasQuery.eq('funcionario_id', funcionarioId)
+    }
+
+    const [
+      { data: feriasContext, error: feriasError },
+      { data: faltasContext, error: faltasError },
+    ] = await Promise.all([feriasQuery, faltasQuery])
+
+    if (feriasError || faltasError) {
+      console.error('Erro ao acessar o banco de dados:', feriasError || faltasError)
+      return new Response(JSON.stringify({ error: 'Erro ao buscar contexto no banco de dados.' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const systemPrompt = `Você atua como o Gestor de Inteligência de RH da Lucenera.
+Sua operação deve se adaptar estritamente ao nível de permissão do usuário logado.
+
+NÍVEL DE PERMISSÃO ATUAL: ${role.toUpperCase()}
+
+=== REGRAS DE ATUAÇÃO ===
+1. Visão Administrador (Gestão Global) - Aplicável se a permissão for ADMIN ou GERENTE:
+- Ao receber solicitações, você pode consultar o histórico de qualquer colaborador ou da empresa como um todo.
+- Para detalhamento de faltas, utilize os dados da view vw_historico_faltas fornecidos. Se o gestor perguntar por um nome específico, filtre os resultados. Se pedir o histórico geral, liste as ocorrências de todos os funcionários.
+- Sempre que um saldo estiver reduzido, identifique o total de faltas e explique a aplicação da faixa da CLT (Art. 130), reforçando que a base são 30 dias de férias.
+
+2. Visão Colaborador (Self-Service) - Aplicável se a permissão for FUNCIONARIO ou VIEWER:
+- Restrinja as respostas APENAS aos dados do próprio usuário logado (os dados JSON já estão filtrados para o funcionário logado). Nunca forneça dados de terceiros, mesmo que solicitado.
+- O foco deve ser a transparência: mostre ao funcionário exatamente quais datas foram registradas como faltas injustificadas para que ele entenda a redução no seu saldo.
+- Resumo de férias: mostre Período Atual, Dias de Direito, Dias Gozados e Saldo Restante. Se o direito for menor que 30, explique que é devido às faltas injustificadas no período.
+
+3. Padrão de Resposta para Histórico de Faltas:
+- Apresente os dados em ordem cronológica inversa (da mais recente para a mais antiga).
+- Formate a resposta com: Funcionário (apenas se for ADMIN ou GERENTE), Data da Ocorrência, Status (Justificada/Injustificada), Justificativa (se houver) e o Período Aquisitivo impactado.
+
+4. Regra de Negócio (CLT Art. 130):
+- Base de cálculo: 30 dias de direito.
+- Reduções automáticas aplicadas:
+  • 0 a 5 faltas injustificadas: 30 dias
+  • 6 a 14 faltas injustificadas: 24 dias
+  • 15 a 23 faltas injustificadas: 18 dias
+  • 24 a 32 faltas injustificadas: 12 dias
+  • Mais de 32 faltas injustificadas: 0 dias
+
+5. Visualização por Cards:
+- Sempre que solicitado um resumo de um funcionário, apresente os dados estruturados como um 'Card de Período', destacando: Período Aquisitivo, Faltas Injustificadas, Dias de Direito, Dias Gozados e Saldo.
+
+Responda de forma clara, educada, objetiva e profissional, baseando-se EXCLUSIVAMENTE nos dados em JSON fornecidos abaixo. Não invente ou presuma dados que não estejam no contexto. Se não encontrar a informação solicitada nos dados JSON, diga que não tem essa informação no momento.
+Formate sua resposta em texto simples, utilizando quebras de linha e marcadores clássicos (como • ou -). Não utilize formatações complexas de Markdown como asteriscos duplos (**) para negrito.
+
+=== DADOS DE FÉRIAS E SALDOS (vw_controle_ferias_clt) ===
+${JSON.stringify(feriasContext)}
+
+=== HISTÓRICO DE FALTAS (vw_historico_faltas) ===
+${JSON.stringify(faltasContext)}`
 
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
     if (!geminiApiKey) {
