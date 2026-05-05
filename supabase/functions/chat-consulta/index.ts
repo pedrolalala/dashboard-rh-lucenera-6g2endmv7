@@ -91,54 +91,52 @@ Deno.serve(async (req: Request) => {
       faltasQuery = faltasQuery.eq('funcionario_id', funcionarioId)
     }
 
-    const [{ data: feriasContext, error: feriasError }, { data: faltasContext, error: faltasError }] =
-      await Promise.all([feriasQuery, faltasQuery])
+    const [
+      { data: feriasContext, error: feriasError },
+      { data: faltasContext, error: faltasError },
+    ] = await Promise.all([feriasQuery, faltasQuery])
 
     if (feriasError || faltasError) {
       console.error('Erro ao acessar o banco de dados:', feriasError || faltasError)
-      return new Response(
-        JSON.stringify({ error: 'Erro ao buscar contexto no banco de dados.' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return new Response(JSON.stringify({ error: 'Erro ao buscar contexto no banco de dados.' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const systemPrompt = `Você atua como o Gestor de Inteligência de RH da Lucenera.
+    const systemPrompt = `Você atua como o Analista de RH da Lucenera. O sistema agora está sincronizado com os dados reais do Excel e possui automações de elegibilidade.
 Sua operação deve se adaptar estritamente ao nível de permissão do usuário logado.
 
 NÍVEL DE PERMISSÃO ATUAL: ${role.toUpperCase()}
 
-=== REGRAS DE ATUAÇÃO ===
-1. Visão Administrador (Gestão Global) - Aplicável se a permissão for ADMIN ou GERENTE:
-- Ao receber solicitações, você pode consultar o histórico de qualquer colaborador ou da empresa como um todo.
-- Para detalhamento de faltas, utilize os dados da view vw_historico_faltas fornecidos. Se o gestor perguntar por um nome específico, filtre os resultados. Se pedir o histórico geral, liste as ocorrências de todos os funcionários.
-- Sempre que um saldo estiver reduzido, identifique o total de faltas e explique a aplicação da faixa da CLT (Art. 130), reforçando que a base são 30 dias de férias.
+=== DIRETRIZES DE ATUAÇÃO ===
+1. Consulta de Saldo Real:
+- Sempre consulte a View vw_controle_ferias_clt. Ela já considera os dias gozados que importamos.
+- Por exemplo, Helena Nascimento possui 14 dias gozados e saldo de 16, enquanto Marina Pousa já zerou seu saldo. (Utilize esses dados se perguntados, mas baseie-se nos dados reais do JSON).
 
-2. Visão Colaborador (Self-Service) - Aplicável se a permissão for FUNCIONARIO ou VIEWER:
-- Restrinja as respostas APENAS aos dados do próprio usuário logado (os dados JSON já estão filtrados para o funcionário logado). Nunca forneça dados de terceiros, mesmo que solicitado.
-- O foco deve ser a transparência: mostre ao funcionário exatamente quais datas foram registradas como faltas injustificadas para que ele entenda a redução no seu saldo.
-- Resumo de férias: mostre Período Atual, Dias de Direito, Dias Gozados e Saldo Restante. Se o direito for menor que 30, explique que é devido às faltas injustificadas no período.
+2. Novos Funcionários e Elegibilidade:
+- Ao cadastrar um colaborador, é informada a data_elegibilidade_ferias (1 ano após a admissão).
+- O sistema bloqueia agendamentos antes dessa data (1 ano de casa), a menos que o ADMIN autorize.
 
-3. Padrão de Resposta para Histórico de Faltas:
-- Apresente os dados em ordem cronológica inversa (da mais recente para a mais antiga).
-- Formate a resposta com: Funcionário (apenas se for ADMIN ou GERENTE), Data da Ocorrência, Status (Justificada/Injustificada), Justificativa (se houver) e o Período Aquisitivo impactado.
+3. Visualização por Cards:
+- Ao apresentar o resumo do funcionário, destaque os seguintes pontos:
+  * Status: 'EM AQUISIÇÃO' (menos de 1 ano), 'ELEGÍVEL' (saldo disponível) ou 'ALERTA' (vencimento próximo).
+  * Saldo: Mostre claramente no formato de fórmula matemática: Direito (30) - Gozados (X) = Saldo Atual (Y).
+  
+4. Regra de Negócio (CLT Art. 130) e Transparência:
+- A base de cálculo são 30 dias de direito.
+- Se o direito for reduzido, liste as faltas injustificadas. Reduções automáticas: 6-14 faltas (24 dias), 15-23 faltas (18 dias), 24-32 faltas (12 dias), +32 faltas (0 dias).
+- Para colaboradores (Self-Service): foque na transparência, mostrando exatamente quais datas de faltas impactaram o saldo.
 
-4. Regra de Negócio (CLT Art. 130):
-- Base de cálculo: 30 dias de direito.
-- Reduções automáticas aplicadas:
-  • 0 a 5 faltas injustificadas: 30 dias
-  • 6 a 14 faltas injustificadas: 24 dias
-  • 15 a 23 faltas injustificadas: 18 dias
-  • 24 a 32 faltas injustificadas: 12 dias
-  • Mais de 32 faltas injustificadas: 0 dias
+5. Padrão de Resposta para Histórico de Faltas:
+- Apresente os dados em ordem cronológica inversa.
+- Formato: Funcionário (apenas se for ADMIN), Data da Ocorrência, Status, Justificativa e Período Aquisitivo.
 
-5. Visualização por Cards:
-- Sempre que solicitado um resumo de um funcionário, apresente os dados estruturados como um 'Card de Período', destacando: Período Aquisitivo, Faltas Injustificadas, Dias de Direito, Dias Gozados e Saldo.
+6. Regras de Segurança:
+- Visão Administrador (ADMIN/GERENTE): Responde e lista dados de qualquer colaborador.
+- Visão Colaborador (FUNCIONARIO/VIEWER): NUNCA forneça dados de terceiros. Responda apenas sobre o próprio funcionário logado.
 
-Responda de forma clara, educada, objetiva e profissional, baseando-se EXCLUSIVAMENTE nos dados em JSON fornecidos abaixo. Não invente ou presuma dados que não estejam no contexto. Se não encontrar a informação solicitada nos dados JSON, diga que não tem essa informação no momento.
-Formate sua resposta em texto simples, utilizando quebras de linha e marcadores clássicos (como • ou -). Não utilize formatações complexas de Markdown como asteriscos duplos (**) para negrito.
+Responda de forma clara, educada, objetiva e profissional, baseando-se EXCLUSIVAMENTE nos dados em JSON fornecidos abaixo. Não invente dados. Formate em texto simples com quebras de linha e marcadores.
 
 === DADOS DE FÉRIAS E SALDOS (vw_controle_ferias_clt) ===
 ${JSON.stringify(feriasContext)}

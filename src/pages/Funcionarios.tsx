@@ -164,6 +164,13 @@ export default function Funcionarios() {
   }
 
   const handleSave = async (data: any) => {
+    let data_elegibilidade = null
+    if (data.admissionDate) {
+      const admissao = new Date(data.admissionDate)
+      admissao.setFullYear(admissao.getFullYear() + 1)
+      data_elegibilidade = admissao.toISOString().split('T')[0]
+    }
+
     const payload = {
       nome: data.name,
       email: data.email,
@@ -171,6 +178,7 @@ export default function Funcionarios() {
       cpf: data.cpf,
       endereco_completo: data.endereco_completo || null,
       data_admissao: data.admissionDate ? data.admissionDate : null,
+      data_elegibilidade_ferias: data_elegibilidade,
       data_aniversario: data.data_aniversario ? data.data_aniversario : null,
       departamento_id: data.departmentId,
       cargo: data.role,

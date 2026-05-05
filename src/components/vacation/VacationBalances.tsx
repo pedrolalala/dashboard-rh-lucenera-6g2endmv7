@@ -17,7 +17,9 @@ export function VacationBalances() {
     const fetchData = async () => {
       setIsLoading(true)
 
-      const { data: funcs } = await supabase.from('funcionarios').select('id, data_admissao')
+      const { data: funcs } = await supabase
+        .from('funcionarios')
+        .select('id, data_admissao, data_elegibilidade_ferias')
       const funcMap = (funcs || []).reduce((acc: any, f: any) => {
         acc[f.id] = f
         return acc
@@ -61,7 +63,12 @@ export function VacationBalances() {
     let isEmAquisicao = false
     let dataElegibilidade = null
 
-    if (func?.data_admissao) {
+    if (func?.data_elegibilidade_ferias) {
+      dataElegibilidade = new Date(func.data_elegibilidade_ferias)
+      if (new Date() < dataElegibilidade) {
+        isEmAquisicao = true
+      }
+    } else if (func?.data_admissao) {
       dataElegibilidade = addYears(new Date(func.data_admissao), 1)
       if (new Date() < dataElegibilidade) {
         isEmAquisicao = true
@@ -213,20 +220,32 @@ export function VacationBalances() {
                       {b.total_faltas || 0}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" /> Dias de Direito:
-                    </span>
-                    <span className="font-medium">{b.dias_direito || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> Dias Gozados:
-                    </span>
-                    <span className="font-medium">{b.dias_gozados || 0}</span>
+                  <div className="bg-muted/30 p-2 rounded-sm border border-border/50 space-y-1 my-2">
+                    <div className="flex items-center justify-between text-xs text-center">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] uppercase text-muted-foreground tracking-widest">
+                          Direito
+                        </span>
+                        <span className="font-medium">{b.dias_direito || 0}</span>
+                      </div>
+                      <span className="text-muted-foreground font-bold">-</span>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] uppercase text-muted-foreground tracking-widest">
+                          Gozados
+                        </span>
+                        <span className="font-medium text-amber-600">{b.dias_gozados || 0}</span>
+                      </div>
+                      <span className="text-muted-foreground font-bold">=</span>
+                      <div className="flex flex-col">
+                        <span className="text-[9px] uppercase text-primary tracking-widest font-bold">
+                          Saldo Atual
+                        </span>
+                        <span className="font-bold text-primary">{b.saldo_disponivel || 0}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="pt-3 border-t border-border/50 flex justify-between items-end">
+                  <div className="pt-2 border-t border-border/50 flex justify-between items-end">
                     <div className="flex flex-col">
                       <span className="text-[9px] uppercase tracking-widest text-muted-foreground">
                         Limite de Gozo
@@ -237,16 +256,6 @@ export function VacationBalances() {
                         {b.data_limite_gozo
                           ? format(new Date(b.data_limite_gozo), 'dd/MM/yyyy')
                           : '-'}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-[9px] uppercase tracking-widest text-muted-foreground">
-                        Saldo
-                      </span>
-                      <span
-                        className={`text-xl font-bold leading-none ${b.saldo_disponivel > 0 ? 'text-primary' : 'text-muted-foreground'}`}
-                      >
-                        {b.saldo_disponivel || 0}
                       </span>
                     </div>
                   </div>

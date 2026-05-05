@@ -31,6 +31,8 @@ import type { VacationRequest } from '@/pages/Ferias'
 interface EmployeeOption {
   id: string
   name: string
+  dataAdmissao?: string
+  dataElegibilidadeFerias?: string
 }
 
 interface VacationFormProps {
@@ -55,7 +57,7 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
       const fetchEmps = async () => {
         let query = supabase
           .from('funcionarios')
-          .select('id, nome, data_admissao')
+          .select('id, nome, data_admissao, data_elegibilidade_ferias')
           .eq('status', 'Ativo')
           .order('nome')
         if (user?.app_role === 'funcionario' && user.funcionario_id) {
@@ -64,7 +66,12 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
         const { data } = await query
         if (data) {
           setEmployees(
-            data.map((d: any) => ({ id: d.id, name: d.nome, dataAdmissao: d.data_admissao })),
+            data.map((d: any) => ({
+              id: d.id,
+              name: d.nome,
+              dataAdmissao: d.data_admissao,
+              dataElegibilidadeFerias: d.data_elegibilidade_ferias,
+            })),
           )
           if (requestToEdit) {
             setEmployeeId(requestToEdit.employeeId)
@@ -133,6 +140,9 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
     [employees, employeeId],
   )
   const dataElegibilidade = useMemo(() => {
+    if (selectedEmployee?.dataElegibilidadeFerias) {
+      return new Date(selectedEmployee.dataElegibilidadeFerias)
+    }
     if (selectedEmployee?.dataAdmissao) {
       return addYears(new Date(selectedEmployee.dataAdmissao), 1)
     }
