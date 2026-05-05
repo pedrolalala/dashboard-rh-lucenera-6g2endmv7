@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
 import {
   Dialog,
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
@@ -40,9 +41,11 @@ interface VacationFormProps {
 
 export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: VacationFormProps) {
   const [employeeId, setEmployeeId] = useState('')
+  const [periodoId, setPeriodoId] = useState('')
   const [startDate, setStartDate] = useState<Date>()
   const [endDate, setEndDate] = useState<Date>()
   const [employees, setEmployees] = useState<EmployeeOption[]>([])
+  const [balances, setBalances] = useState<any[]>([])
   const { user } = useAuth()
 
   useEffect(() => {
@@ -70,11 +73,32 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
       }
       fetchEmps()
     } else {
-      if (user?.app_role !== 'funcionario') setEmployeeId('')
+      if (user?.app_role !== 'funcionario') {
+        setEmployeeId('')
+        setPeriodoId('')
+      }
       setStartDate(undefined)
       setEndDate(undefined)
     }
   }, [open, user, requestToEdit])
+
+  useEffect(() => {
+    if (employeeId && open) {
+      supabase
+        .from('vw_controle_ferias_clt')
+        .select('*')
+        .eq('funcionario_id', employeeId)
+        .then(({ data }) => {
+          setBalances(data || [])
+          if (data && data.length > 0 && !requestToEdit) {
+            setPeriodoId(data[0].periodo_id)
+          }
+        })
+    } else {
+      setBalances([])
+      setPeriodoId('')
+    }
+  }, [employeeId, open, requestToEdit])
 
   const calculatedDays = useMemo(() => {
     if (startDate && endDate) {
@@ -87,14 +111,24 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
     return 0
   }, [startDate, endDate])
 
+  const selectedBalance = useMemo(() => {
+    if (!periodoId) return null
+    return balances.find((b) => b.periodo_id === periodoId)
+  }, [periodoId, balances])
+
+  const isExceedingBalance =
+    selectedBalance && calculatedDays > (selectedBalance.saldo_disponivel || 0)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!employeeId || !startDate || !endDate || calculatedDays <= 0) return
+    if (isExceedingBalance) return
 
     if (requestToEdit) {
       const { error } = await supabase
         .from('ferias')
         .update({
+          periodo_aquisitivo_id: periodoId || null,
           data_inicio: format(startDate, 'yyyy-MM-dd'),
           data_fim: format(endDate, 'yyyy-MM-dd'),
           dias: calculatedDays,
@@ -108,6 +142,7 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
     } else {
       const { error } = await supabase.from('ferias').insert({
         funcionario_id: employeeId,
+        periodo_aquisitivo_id: periodoId || null,
         data_inicio: format(startDate, 'yyyy-MM-dd'),
         data_fim: format(endDate, 'yyyy-MM-dd'),
         dias: calculatedDays,
@@ -152,6 +187,38 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
                 {employees.map((emp) => (
                   <SelectItem key={emp.id} value={emp.id} className="rounded-none text-xs">
                     {emp.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              Período Aquisitivo
+            </Label>
+            <Select
+              value={periodoId}
+              onValueChange={setPeriodoId}
+              disabled={balances.length === 0 || !!requestToEdit}
+            >
+              <SelectTrigger className="w-full rounded-none border-border">
+                <SelectValue
+                  placeholder={
+                    balances.length === 0 ? 'Nenhum período (sem CLT)' : 'Selecione o período'
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent className="rounded-none border-border">
+                {balances.map((b) => (
+                  <SelectItem
+                    key={b.periodo_id}
+                    value={b.periodo_id}
+                    className="rounded-none text-xs"
+                  >
+                    {b.data_inicio ? format(new Date(b.data_inicio), 'dd/MM/yyyy') : ''} a{' '}
+                    {b.data_fim ? format(new Date(b.data_fim), 'dd/MM/yyyy') : ''} (Saldo:{' '}
+                    {b.saldo_disponivel} dias)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -224,9 +291,22 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
               type="number"
               value={calculatedDays}
               readOnly
-              className="bg-muted text-foreground border-border rounded-none font-medium cursor-not-allowed text-xs"
+              className={cn(
+                'bg-muted text-foreground border-border rounded-none font-medium cursor-not-allowed text-xs',
+                isExceedingBalance && 'border-destructive text-destructive',
+              )}
             />
           </div>
+
+          {isExceedingBalance && (
+            <Alert variant="destructive" className="rounded-none border-border">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-[10px] uppercase tracking-widest ml-2">
+                A quantidade de dias solicitados ({calculatedDays}) excede o saldo disponível (
+                {selectedBalance?.saldo_disponivel || 0}).
+              </AlertDescription>
+            </Alert>
+          )}
 
           <DialogFooter className="pt-4 border-t border-border">
             <Button
@@ -239,7 +319,7 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             </Button>
             <Button
               type="submit"
-              disabled={!employeeId || calculatedDays <= 0}
+              disabled={!employeeId || calculatedDays <= 0 || isExceedingBalance}
               className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-none text-xs uppercase tracking-widest"
             >
               {requestToEdit ? 'Salvar' : 'Solicitar'}

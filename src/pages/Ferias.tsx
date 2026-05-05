@@ -9,9 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { VacationTable } from '@/components/vacation/VacationTable'
 import { VacationForm } from '@/components/vacation/VacationForm'
 import { VacationCalendar } from '@/components/vacation/VacationCalendar'
+import { VacationBalances } from '@/components/vacation/VacationBalances'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
@@ -116,7 +118,7 @@ export default function Ferias() {
             Gestão de Férias
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Gerencie solicitações e o calendário de disponibilidade da equipe.
+            Gerencie solicitações, saldos e o calendário de disponibilidade da equipe.
           </p>
         </div>
         <Button
@@ -130,58 +132,101 @@ export default function Ferias() {
         </Button>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-6">
-          <VacationCalendar requests={requests} />
-        </div>
+      <Tabs defaultValue="solicitacoes" className="w-full">
+        <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent p-0">
+          <TabsTrigger
+            value="solicitacoes"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent uppercase tracking-widest text-xs"
+          >
+            Solicitações
+          </TabsTrigger>
+          <TabsTrigger
+            value="saldos"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent uppercase tracking-widest text-xs"
+          >
+            Saldos Disponíveis
+          </TabsTrigger>
+        </TabsList>
 
-        <div className="lg:col-span-2 space-y-4">
-          <Card className="shadow-none border-border h-full flex flex-col">
-            <CardHeader className="pb-3 border-b border-border bg-transparent">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <CardTitle className="text-sm uppercase tracking-widest">
-                  Solicitações de Férias
-                </CardTitle>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <Filter className="h-4 w-4 text-muted-foreground" />
-                  <Select value={deptFilter} onValueChange={setDeptFilter}>
-                    <SelectTrigger className="w-[150px] bg-transparent">
-                      <SelectValue placeholder="Departamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Todos">Todos Deptos</SelectItem>
-                      <SelectItem value="TI">TI</SelectItem>
-                      <SelectItem value="Vendas">Vendas</SelectItem>
-                      <SelectItem value="RH">RH</SelectItem>
-                      <SelectItem value="Operações">Operações</SelectItem>
-                      <SelectItem value="Financeiro">Financeiro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[140px] bg-transparent">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Todos">Todos Status</SelectItem>
-                      <SelectItem value="Pendente">Pendente</SelectItem>
-                      <SelectItem value="Aprovado">Aprovado</SelectItem>
-                      <SelectItem value="Rejeitado">Rejeitado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 flex-1">
-              <VacationTable
-                data={filteredRequests}
-                onUpdateStatus={handleUpdateStatus}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        <TabsContent value="solicitacoes" className="mt-6 space-y-6">
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 space-y-6">
+              <VacationCalendar requests={requests} />
+            </div>
+
+            <div className="lg:col-span-2 space-y-4">
+              <Card className="shadow-none border-border h-full flex flex-col">
+                <CardHeader className="pb-3 border-b border-border bg-transparent">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <CardTitle className="text-sm uppercase tracking-widest">
+                      Solicitações de Férias
+                    </CardTitle>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Filter className="h-4 w-4 text-muted-foreground" />
+                      <Select value={deptFilter} onValueChange={setDeptFilter}>
+                        <SelectTrigger className="w-[150px] bg-transparent text-xs h-8 rounded-none">
+                          <SelectValue placeholder="Departamento" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-none border-border">
+                          <SelectItem value="Todos" className="text-xs">
+                            Todos Deptos
+                          </SelectItem>
+                          <SelectItem value="TI" className="text-xs">
+                            TI
+                          </SelectItem>
+                          <SelectItem value="Vendas" className="text-xs">
+                            Vendas
+                          </SelectItem>
+                          <SelectItem value="RH" className="text-xs">
+                            RH
+                          </SelectItem>
+                          <SelectItem value="Operações" className="text-xs">
+                            Operações
+                          </SelectItem>
+                          <SelectItem value="Financeiro" className="text-xs">
+                            Financeiro
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-[140px] bg-transparent text-xs h-8 rounded-none">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-none border-border">
+                          <SelectItem value="Todos" className="text-xs">
+                            Todos Status
+                          </SelectItem>
+                          <SelectItem value="Pendente" className="text-xs">
+                            Pendente
+                          </SelectItem>
+                          <SelectItem value="Aprovado" className="text-xs">
+                            Aprovado
+                          </SelectItem>
+                          <SelectItem value="Rejeitado" className="text-xs">
+                            Rejeitado
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0 flex-1">
+                  <VacationTable
+                    data={filteredRequests}
+                    onUpdateStatus={handleUpdateStatus}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="saldos" className="mt-6">
+          <VacationBalances />
+        </TabsContent>
+      </Tabs>
 
       <VacationForm
         open={isFormOpen}
