@@ -323,6 +323,8 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
               <AlertDescription className="text-[10px] uppercase tracking-widest ml-2">
                 A quantidade de dias solicitados ({calculatedDays}) excede o saldo disponível (
                 {selectedBalance?.saldo_disponivel || 0}).
+                {selectedBalance?.total_faltas > 0 &&
+                  ` Bloqueio ativo: O direito a férias foi reduzido devido a ${selectedBalance.total_faltas} falta(s) injustificada(s) no período.`}
               </AlertDescription>
             </Alert>
           )}

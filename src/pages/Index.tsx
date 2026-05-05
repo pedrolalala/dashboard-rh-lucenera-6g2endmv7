@@ -28,6 +28,7 @@ export default function Index() {
   const [recentActivities, setRecentActivities] = useState<any[]>([])
   const [absenteismoData, setAbsenteismoData] = useState<any[]>([])
   const [expiringVacations, setExpiringVacations] = useState<any[]>([])
+  const [attentionVacations, setAttentionVacations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
@@ -155,7 +156,19 @@ export default function Index() {
             )
             return diffDays <= 60 && diffDays >= 0
           })
+
+          const attention = saldos.filter((s) => {
+            if (!s.data_limite_gozo) return false
+            const limitDate = new Date(s.data_limite_gozo)
+            const today = new Date()
+            const diffDays = Math.ceil(
+              (limitDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+            )
+            return diffDays > 60 && diffDays <= 180
+          })
+
           setExpiringVacations(expiring)
+          setAttentionVacations(attention)
         }
       }
       setLoading(false)
@@ -168,17 +181,39 @@ export default function Index() {
       {expiringVacations.length > 0 && (
         <Alert
           variant="destructive"
-          className="border-destructive/50 bg-destructive/10 text-destructive animate-fade-in-down"
+          className="border-destructive/50 bg-destructive/10 text-destructive animate-fade-in-down rounded-none"
         >
           <AlertCircle className="h-4 w-4" />
           <AlertTitle className="uppercase tracking-widest text-xs font-bold mb-2">
-            Atenção: Férias a Vencer
+            Crítico: Férias a Vencer (Menos de 60 dias)
           </AlertTitle>
           <AlertDescription className="text-xs">
             Há {expiringVacations.length} colaborador(es) com limite de gozo de férias nos próximos
-            60 dias.
+            60 dias. Prioridade máxima para agendamento!
             <ul className="mt-2 list-disc list-inside space-y-1">
               {expiringVacations.map((f, i) => (
+                <li key={i}>
+                  <span className="font-semibold">{f.funcionario_nome}</span> - Saldo:{' '}
+                  {f.saldo_disponivel} dias - Vence em:{' '}
+                  {format(new Date(f.data_limite_gozo), 'dd/MM/yyyy')}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {attentionVacations.length > 0 && new Date().getDate() <= 5 && (
+        <Alert className="border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-500 animate-fade-in-down rounded-none">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle className="uppercase tracking-widest text-xs font-bold mb-2">
+            Resumo Mensal: Período de Atenção (Menos de 6 meses)
+          </AlertTitle>
+          <AlertDescription className="text-xs">
+            Resumo automático gerado para planejamento preventivo. Os seguintes colaboradores
+            entraram na janela de 6 meses para vencimento das férias:
+            <ul className="mt-2 list-disc list-inside space-y-1">
+              {attentionVacations.map((f, i) => (
                 <li key={i}>
                   <span className="font-semibold">{f.funcionario_nome}</span> - Saldo:{' '}
                   {f.saldo_disponivel} dias - Vence em:{' '}
