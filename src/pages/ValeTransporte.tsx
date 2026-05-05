@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -17,11 +17,15 @@ import { useFeriados } from '@/hooks/use-feriados'
 import { useToast } from '@/hooks/use-toast'
 import { Bus, FileText, Loader2, Calculator } from 'lucide-react'
 
+const COMPANIES = [
+  'Manoella Zauith Leite Lopes ME',
+  'Foco Projetos de Iluminação',
+  'islight Soluções em LED',
+]
+
 export default function ValeTransporte() {
-  const [funcionarios, setFuncionarios] = useState<any[]>([])
-  const [selectedFuncionario, setSelectedFuncionario] = useState('')
+  const [empresa, setEmpresa] = useState<string>('')
   const [mes, setMes] = useState<string>(format(new Date(), 'yyyy-MM'))
-  const [valorDiario, setValorDiario] = useState<string>('15.00')
 
   const year = parseInt(mes.split('-')[0])
   const month = parseInt(mes.split('-')[1]) - 1
@@ -30,22 +34,10 @@ export default function ValeTransporte() {
   const { toast } = useToast()
 
   const [loading, setLoading] = useState(false)
-  const [calculo, setCalculo] = useState<any>(null)
-  const receiptRef = useRef<HTMLDivElement>(null)
+  const [calculos, setCalculos] = useState<any[]>([])
 
-  useEffect(() => {
-    supabase
-      .from('funcionarios')
-      .select('id, nome, empresa, cpf')
-      .eq('status', 'Ativo')
-      .order('nome')
-      .then(({ data }) => {
-        if (data) setFuncionarios(data)
-      })
-  }, [])
-
-  const handleCalcular = async () => {
-    if (!selectedFuncionario || !mes || !valorDiario) {
+  const handleCalcularLote = async () => {
+    if (!empresa || !mes) {
       toast({ title: 'Preencha todos os campos', variant: 'destructive' })
       return
     }
@@ -71,31 +63,64 @@ export default function ValeTransporte() {
         }
       })
 
+      const { data: funcs } = await supabase
+        .from('funcionarios')
+        .select('id, nome, empresa, cpf, valor_vt_dia')
+        .eq('status', 'Ativo')
+        .eq('empresa', empresa)
+
+      if (!funcs || funcs.length === 0) {
+        toast({
+          title: 'Nenhum funcionário encontrado',
+          description: 'Verifique se há funcionários ativos vinculados a esta empresa.',
+        })
+        setCalculos([])
+        return
+      }
+
+      const funcIds = funcs.map((f) => f.id)
       const { data: faltas } = await supabase
-        .from('controle_ponto')
-        .select('data, status')
-        .eq('funcionario_id', selectedFuncionario)
+        .from('controle_falta')
+        .select('funcionario_id, status')
+        .in('funcionario_id', funcIds)
         .gte('data', format(start, 'yyyy-MM-dd'))
         .lte('data', format(end, 'yyyy-MM-dd'))
-        .in('status', ['ausente'])
 
-      const diasFaltados = faltas ? faltas.length : 0
-      const diasTrabalhados = Math.max(0, diasUteis - diasFaltados)
-      const valorTotal = diasTrabalhados * parseFloat(valorDiario)
+      // Descontamos apenas faltas integrais
+      const faltasIntegraisStatus = [
+        'ausente',
+        'falta_injustificada',
+        'atestado',
+        'licenca_maternidade',
+        'licenca_paternidade',
+        'licenca_obito',
+        'licenca_casamento',
+        'licenca_militar',
+        'licenca_medica',
+      ]
 
-      const funcInfo = funcionarios.find((f) => f.id === selectedFuncionario)
+      const results = funcs.map((func) => {
+        const funcFaltas = faltas?.filter((f) => f.funcionario_id === func.id) || []
+        const diasFaltados = funcFaltas.filter(
+          (f) => f.status && faltasIntegraisStatus.includes(f.status),
+        ).length
 
-      setCalculo({
-        funcionario: funcInfo,
-        mes,
-        diasUteis,
-        diasFaltados,
-        diasTrabalhados,
-        valorDiario: parseFloat(valorDiario),
-        valorTotal,
+        const diasEfetivos = Math.max(0, diasUteis - diasFaltados)
+        const valorDiario = func.valor_vt_dia || 0
+        const valorTotal = diasEfetivos * valorDiario
+
+        return {
+          funcionario: func,
+          diasUteis,
+          diasFaltados,
+          diasEfetivos,
+          valorDiario,
+          valorTotal,
+        }
       })
 
-      toast({ title: 'Cálculo realizado com sucesso' })
+      setCalculos(results)
+      toast({ title: 'Cálculo em lote realizado com sucesso' })
     } catch (e: any) {
       toast({ title: 'Erro ao calcular', description: e.message, variant: 'destructive' })
     } finally {
@@ -104,27 +129,59 @@ export default function ValeTransporte() {
   }
 
   const export2Word = () => {
-    if (!receiptRef.current) return
+    if (calculos.length === 0) return
 
-    const preHtml = `
+    const headerHtml = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
-        <meta charset='utf-8'><title>Recibo de Vale Transporte</title>
+        <meta charset='utf-8'><title>Recibos de Vale Transporte</title>
         <style>
           body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.5; color: #000; }
+          .page-break { page-break-after: always; }
           .header { text-align: center; font-size: 16pt; font-weight: bold; margin-bottom: 20px; }
-          .content { margin-bottom: 30px; text-align: justify; }
+          .content { margin-bottom: 20px; text-align: justify; }
+          .details { margin-bottom: 30px; }
           .signature { margin-top: 50px; text-align: center; }
           .signature-line { width: 300px; border-top: 1px solid #000; margin: 0 auto 10px auto; }
         </style>
       </head><body>
     `
-    const postHtml = '</body></html>'
-    const html = preHtml + receiptRef.current.innerHTML + postHtml
+    const footerHtml = '</body></html>'
+
+    const receiptsHtml = calculos
+      .map(
+        (calc, index) => `
+      <div ${index < calculos.length - 1 ? "class='page-break'" : ''}>
+        <div class="header">RECIBO DE VALE TRANSPORTE</div>
+        <div class="content">
+          <p>
+            Recebi da empresa <strong>${calc.funcionario.empresa || 'Lucenera'}</strong>, a importância de <strong>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calc.valorTotal)}</strong>, referente ao benefício de Vale Transporte do mês de <strong>${format(new Date(mes + '-01T12:00:00'), 'MMMM/yyyy', { locale: ptBR })}</strong>.
+          </p>
+        </div>
+        <div class="details">
+          <p>Dias Úteis: [${calc.diasUteis}]</p>
+          <p>Faltas Integrais Descontadas: [${calc.diasFaltados}]</p>
+          <p>Valor Líquido a Receber: R$ [${new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calc.valorTotal)}]</p>
+        </div>
+        <div class="content">
+          <p>Por ser verdade, firmo o presente recibo.</p>
+        </div>
+        <div class="signature">
+          <div class="signature-line"></div>
+          <p>${calc.funcionario.nome}</p>
+          <p>CPF: ${calc.funcionario.cpf || 'Não informado'}</p>
+          <p>Data: ${format(new Date(), 'dd/MM/yyyy')}</p>
+        </div>
+      </div>
+    `,
+      )
+      .join('')
+
+    const html = headerHtml + receiptsHtml + footerHtml
 
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' })
     const url = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(html)
-    const filename = `Recibo_VT_${calculo.funcionario.nome.replace(/\s+/g, '_')}_${mes}.doc`
+    const filename = `Recibos_VT_${empresa.replace(/\s+/g, '_')}_${mes}.doc`
 
     const downloadLink = document.createElement('a')
     document.body.appendChild(downloadLink)
@@ -148,143 +205,102 @@ export default function ValeTransporte() {
           <Bus className="h-6 w-6" /> Gestão de Vale Transporte
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Calcule os dias úteis e gere recibos de Vale Transporte considerando feriados e faltas.
+          Gere recibos de Vale Transporte em lote por empresa, desconsiderando faltas de meio
+          período.
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card>
+      <div className="grid lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-1 h-fit">
           <CardHeader>
-            <CardTitle>Configurar Cálculo</CardTitle>
-            <CardDescription>Selecione os parâmetros para calcular o VT do mês.</CardDescription>
+            <CardTitle>Lote de Recibos</CardTitle>
+            <CardDescription>
+              Selecione a empresa e o mês para processar os recibos.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Funcionário</Label>
-              <Select value={selectedFuncionario} onValueChange={setSelectedFuncionario}>
+              <Label>Empresa</Label>
+              <Select value={empresa} onValueChange={setEmpresa}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um funcionário" />
+                  <SelectValue placeholder="Selecione uma empresa" />
                 </SelectTrigger>
                 <SelectContent>
-                  {funcionarios.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {f.nome} - {f.empresa || 'Lucenera'}
+                  {COMPANIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Mês Referência</Label>
-                <Input type="month" value={mes} onChange={(e) => setMes(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Valor Diário (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={valorDiario}
-                  onChange={(e) => setValorDiario(e.target.value)}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Mês Referência</Label>
+              <Input type="month" value={mes} onChange={(e) => setMes(e.target.value)} />
             </div>
 
-            <Button onClick={handleCalcular} disabled={loading} className="w-full">
+            <Button onClick={handleCalcularLote} disabled={loading} className="w-full mt-4">
               {loading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Calculator className="mr-2 h-4 w-4" />
               )}
-              Calcular VT
+              Calcular Lote
             </Button>
           </CardContent>
         </Card>
 
-        {calculo && (
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center text-lg">
-                <span>Resumo do Cálculo</span>
-                <Button variant="outline" size="sm" onClick={export2Word}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Gerar Recibo (.doc)
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-6 text-sm">
-                <div>
-                  <p className="text-muted-foreground uppercase text-xs font-semibold tracking-wider">
-                    Dias Úteis
-                  </p>
-                  <p className="font-semibold text-xl">{calculo.diasUteis}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground uppercase text-xs font-semibold tracking-wider text-red-500">
-                    Faltas
-                  </p>
-                  <p className="font-semibold text-xl text-red-600">{calculo.diasFaltados}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground uppercase text-xs font-semibold tracking-wider text-green-600">
-                    Dias Efetivos
-                  </p>
-                  <p className="font-semibold text-2xl text-green-700">{calculo.diasTrabalhados}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground uppercase text-xs font-semibold tracking-wider text-primary">
-                    Valor Total
-                  </p>
-                  <p className="font-semibold text-2xl text-primary">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                      calculo.valorTotal,
-                    )}
-                  </p>
-                </div>
+        {calculos.length > 0 && (
+          <Card className="lg:col-span-2 border-primary/20">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Resumo do Processamento</CardTitle>
+                <CardDescription>
+                  {calculos.length} recibos gerados para <strong>{empresa}</strong>.
+                </CardDescription>
               </div>
-
-              {/* Hidden Receipt for Word Export */}
-              <div className="hidden">
-                <div ref={receiptRef}>
-                  <div className="header">RECIBO DE VALE TRANSPORTE</div>
-                  <div className="content">
-                    <p>
-                      Recebi da empresa <strong>{calculo.funcionario.empresa || 'Lucenera'}</strong>
-                      , a importância de{' '}
-                      <strong>
-                        {new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL',
-                        }).format(calculo.valorTotal)}
-                      </strong>
-                      , referente ao benefício de Vale Transporte do mês de{' '}
-                      <strong>
-                        {format(new Date(calculo.mes + '-01T12:00:00'), 'MMMM/yyyy', {
-                          locale: ptBR,
-                        })}
-                      </strong>
-                      .
-                    </p>
-                    <p>
-                      Cálculo: {calculo.diasTrabalhados} dias trabalhados (Dias úteis:{' '}
-                      {calculo.diasUteis} | Faltas: {calculo.diasFaltados}) x{' '}
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(calculo.valorDiario)}{' '}
-                      (Valor Diário).
-                    </p>
-                    <p>Por ser verdade, firmo o presente recibo.</p>
-                  </div>
-                  <div className="signature">
-                    <div className="signature-line"></div>
-                    <p>{calculo.funcionario.nome}</p>
-                    <p>CPF: {calculo.funcionario.cpf || 'Não informado'}</p>
-                    <p>Data: {format(new Date(), 'dd/MM/yyyy')}</p>
-                  </div>
-                </div>
+              <Button variant="default" onClick={export2Word}>
+                <FileText className="mr-2 h-4 w-4" />
+                Exportar Lote (.doc)
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Funcionário</th>
+                      <th className="px-4 py-3 font-medium text-right">Dias Úteis</th>
+                      <th className="px-4 py-3 font-medium text-right">Faltas Int.</th>
+                      <th className="px-4 py-3 font-medium text-right">Valor Diário</th>
+                      <th className="px-4 py-3 font-medium text-right">Líquido a Receber</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {calculos.map((calc) => (
+                      <tr key={calc.funcionario.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3 font-medium">{calc.funcionario.nome}</td>
+                        <td className="px-4 py-3 text-right">{calc.diasUteis}</td>
+                        <td className="px-4 py-3 text-right text-red-500 font-semibold">
+                          {calc.diasFaltados > 0 ? calc.diasFaltados : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-right text-muted-foreground">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(calc.valorDiario)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-primary">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(calc.valorTotal)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>

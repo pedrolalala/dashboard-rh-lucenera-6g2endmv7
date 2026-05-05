@@ -97,18 +97,17 @@ Deno.serve(async (req: Request) => {
       faltasQuery = faltasQuery.eq('funcionario_id', funcionarioId)
     }
 
-    const [{ data: feriasContext, error: feriasError }, { data: faltasContext, error: faltasError }] =
-      await Promise.all([feriasQuery, faltasQuery])
+    const [
+      { data: feriasContext, error: feriasError },
+      { data: faltasContext, error: faltasError },
+    ] = await Promise.all([feriasQuery, faltasQuery])
 
     if (feriasError || faltasError) {
       console.error('Erro ao acessar o banco de dados:', feriasError || faltasError)
-      return new Response(
-        JSON.stringify({ error: 'Erro ao buscar contexto no banco de dados.' }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
+      return new Response(JSON.stringify({ error: 'Erro ao buscar contexto no banco de dados.' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     const systemPrompt = `Você atua como o Analista de RH da Lucenera. O sistema agora está sincronizado com os dados reais do Excel e possui automações de elegibilidade.
