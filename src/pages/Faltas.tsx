@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaltasTabela } from '@/components/faltas/FaltasTabela'
 import { FaltasCalendario } from '@/components/faltas/FaltasCalendario'
-import { Bus, Info } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Bus } from 'lucide-react'
 
 export default function Faltas() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -29,35 +28,6 @@ export default function Faltas() {
           Gerar Vale Transporte
         </Link>
       </div>
-
-      <Alert className="bg-primary/5 border-primary/20">
-        <Info className="h-4 w-4 text-primary" />
-        <AlertTitle className="text-primary font-medium text-xs uppercase tracking-widest">
-          Impacto no Saldo de Férias
-        </AlertTitle>
-        <AlertDescription className="text-muted-foreground text-xs mt-2">
-          Qualquer registro com status <strong className="text-foreground">Ausente</strong> e{' '}
-          <strong className="text-foreground">sem justificativa</strong> reduzirá automaticamente o
-          direito a férias na próxima consulta, seguindo as faixas da CLT:
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-            <span>
-              <strong className="text-foreground">Até 5 faltas:</strong> 30 dias
-            </span>
-            <span>
-              <strong className="text-foreground">6 a 14 faltas:</strong> 24 dias
-            </span>
-            <span>
-              <strong className="text-foreground">15 a 23 faltas:</strong> 18 dias
-            </span>
-            <span>
-              <strong className="text-foreground">24 a 32 faltas:</strong> 12 dias
-            </span>
-            <span>
-              <strong className="text-foreground">Acima de 32:</strong> 0 dias
-            </span>
-          </div>
-        </AlertDescription>
-      </Alert>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         <div className="xl:col-span-4 flex flex-col gap-6">
