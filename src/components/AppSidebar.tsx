@@ -8,7 +8,6 @@ import {
   UserX,
   Star,
   FileText,
-  UserPlus,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -25,10 +24,7 @@ import {
 import { useAuth } from '@/hooks/use-auth'
 import logoImg from '@/assets/logotipo-vertical_v1_preto-9e726.png'
 
-const navGestao = [
-  { name: 'Funcionários Ativos', href: '/funcionarios', icon: Users },
-  { name: 'Recrutamento', href: '/recrutamento', icon: UserPlus },
-]
+const navGestao = [{ name: 'Funcionários Ativos', href: '/funcionarios', icon: Users }]
 
 const navOperacional = [
   { name: 'Controle de Faltas', href: '/faltas', icon: UserX },
