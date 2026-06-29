@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Employee } from '@/pages/Funcionarios'
+import { type Employee } from '@/pages/Funcionarios'
 import { Loader2, DollarSign } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
+import { formatCurrency } from '@/lib/utils'
 import {
   Select,
   SelectContent,
@@ -27,10 +28,17 @@ const YEARS = [
 ]
 
 export function EmployeeFinance({ employee }: { employee: Employee }) {
-  const [salarioBase, setSalarioBase] = useState<string>(String(employee.salary || 0))
-  const [comissao, setComissao] = useState<string>('0')
-  const [valorVr, setValorVr] = useState<string>('0')
-  const [valorVt, setValorVt] = useState<string>('0')
+  const [salarioBase, setSalarioBase] = useState<string>(String(employee.salario_base || 0))
+  const [salarioPorFora, setSalarioPorFora] = useState<string>(
+    String(employee.salario_por_fora || 0),
+  )
+  const [comissaoPercentual, setComissaoPercentual] = useState<string>(
+    String(employee.comissao_percentual || 0),
+  )
+  const [salarioLiquido, setSalarioLiquido] = useState<string>(
+    String(employee.salario_liquido || 0),
+  )
+  const [valorVtDia, setValorVtDia] = useState<string>(String(employee.valor_vt_dia || 0))
   const [mes, setMes] = useState(String(new Date().getMonth() + 1))
   const [ano, setAno] = useState(String(new Date().getFullYear()))
   const [loading, setLoading] = useState(false)
@@ -38,8 +46,6 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
   const { toast } = useToast()
   const [folhaId, setFolhaId] = useState<string | null>(null)
   const [historico, setHistorico] = useState<any[]>([])
-  const [totalVendas, setTotalVendas] = useState<string>('0')
-  const [percentualComissao, setPercentualComissao] = useState<string>('0')
 
   useEffect(() => {
     fetchFolha()
@@ -59,32 +65,6 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
 
   const fetchFolha = async () => {
     setLoading(true)
-
-    let vendasMes = 0
-    if (employee.usuario_id) {
-      const startDate = `${ano}-${String(mes).padStart(2, '0')}-01`
-      const lastDay = new Date(Number(ano), Number(mes), 0).getDate()
-      const endDate = `${ano}-${String(mes).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-
-      const { data: projetos } = await supabase
-        .from('projetos')
-        .select('codigo')
-        .eq('responsavel_id', employee.usuario_id)
-
-      if (projetos && projetos.length > 0) {
-        const cods = projetos.map((p) => p.codigo)
-        const { data: fechados } = await supabase
-          .from('projetos_fechados')
-          .select('valor_fechado')
-          .in('cod', cods)
-          .gte('data_fechamento', startDate)
-          .lte('data_fechamento', endDate)
-
-        vendasMes = fechados?.reduce((acc, curr) => acc + (Number(curr.valor_fechado) || 0), 0) || 0
-      }
-    }
-    setTotalVendas(String(vendasMes))
-
     const { data } = await supabase
       .from('folha_pagamento')
       .select('*')
@@ -93,35 +73,12 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
       .eq('ano', Number(ano))
       .maybeSingle()
 
-    let percent = 0
-
     if (data) {
       setFolhaId(data.id)
       setSalarioBase(String(data.salario_base || 0))
-      setComissao(String(data.comissao || 0))
-
-      const { data: empData } = await supabase
-        .from('funcionarios')
-        .select('comissao_padrao')
-        .eq('id', employee.id)
-        .single()
-      percent = Number(empData?.comissao_padrao || 0)
-      setPercentualComissao(String(percent))
+      setSalarioLiquido(String(data.salario_liquido || 0))
     } else {
       setFolhaId(null)
-      const { data: empData } = await supabase
-        .from('funcionarios')
-        .select('salario_base, comissao_padrao, valor_vr, valor_vt')
-        .eq('id', employee.id)
-        .single()
-      setSalarioBase(String(empData?.salario_base || 0))
-      setValorVr(String(empData?.valor_vr || 0))
-      setValorVt(String(empData?.valor_vt || 0))
-      percent = Number(empData?.comissao_padrao || 0)
-      setPercentualComissao(String(percent))
-
-      const calcCom = vendasMes * (percent / 100)
-      setComissao(String(calcCom))
     }
     setLoading(false)
   }
@@ -130,40 +87,74 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
     setSaving(true)
     try {
       const base = Number(salarioBase) || 0
-      const com = Number(comissao) || 0
-      const perc = Number(percentualComissao) || 0
+      const porFora = Number(salarioPorFora) || 0
+      const perc = Number(comissaoPercentual) || 0
+      const liquido = Number(salarioLiquido) || 0
+      const vtDia = Number(valorVtDia) || 0
 
-      const vr = Number(valorVr) || 0
-      const vt = Number(valorVt) || 0
+      const { data: existingFin } = await supabase
+        .from('funcionarios_financeiro')
+        .select('id')
+        .eq('funcionario_id', employee.id)
+        .maybeSingle()
 
-      await supabase
-        .from('funcionarios')
-        .update({ salario_base: base, comissao_padrao: perc, valor_vr: vr, valor_vt: vt })
-        .eq('id', employee.id)
+      const finPayload = {
+        salario_base: base,
+        salario_por_fora: porFora,
+        comissao_percentual: perc,
+        salario_liquido: liquido,
+      }
+
+      if (existingFin) {
+        await supabase.from('funcionarios_financeiro').update(finPayload).eq('id', existingFin.id)
+      } else {
+        await supabase
+          .from('funcionarios_financeiro')
+          .insert({ ...finPayload, funcionario_id: employee.id })
+      }
+
+      const { data: existingBen } = await supabase
+        .from('funcionarios_beneficios_empresas')
+        .select('id')
+        .eq('funcionario_id', employee.id)
+        .maybeSingle()
+
+      const benPayload = { valor_vt_dia: vtDia }
+      if (existingBen) {
+        await supabase
+          .from('funcionarios_beneficios_empresas')
+          .update(benPayload)
+          .eq('id', existingBen.id)
+      } else {
+        await supabase
+          .from('funcionarios_beneficios_empresas')
+          .insert({ ...benPayload, funcionario_id: employee.id })
+      }
 
       const descontos = base * 0.185
-      // Approximating "adicionais" with 22 working days for the isolated payroll edit,
-      // but realistically it should be calculated dynamically if doing the monthly run.
-      // Since this is manual edit for a specific month, we compute basic 22 days VR+VT if not generated by bulk.
-      const adicionais = (vr + vt) * 22
-      const liquido = base - descontos + adicionais + com
+      const adicionais = vtDia * 22
+      const folhaLiquido = base - descontos + adicionais + porFora
 
-      const payload = {
+      const folhaPayload = {
         funcionario_id: employee.id,
         mes: Number(mes),
         ano: Number(ano),
         salario_base: base,
         descontos,
         adicionais,
-        comissao: com,
-        salario_liquido: liquido,
+        comissao: porFora,
+        salario_liquido: folhaLiquido,
+        valor_vr_vt: adicionais,
       }
 
       if (folhaId) {
-        const { error } = await supabase.from('folha_pagamento').update(payload).eq('id', folhaId)
+        const { error } = await supabase
+          .from('folha_pagamento')
+          .update(folhaPayload)
+          .eq('id', folhaId)
         if (error) throw error
       } else {
-        const { error } = await supabase.from('folha_pagamento').insert([payload])
+        const { error } = await supabase.from('folha_pagamento').insert([folhaPayload])
         if (error) throw error
       }
 
@@ -178,10 +169,11 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
   }
 
   const baseVal = Number(salarioBase) || 0
-  const comVal = Number(comissao) || 0
+  const porForaVal = Number(salarioPorFora) || 0
   const descVal = baseVal * 0.185
-  const adicVal = 800
-  const liqVal = baseVal - descVal + adicVal + comVal
+  const vtVal = Number(valorVtDia) || 0
+  const adicVal = vtVal * 22
+  const liqVal = baseVal - descVal + adicVal + porForaVal
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -238,74 +230,56 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
                 </p>
               </div>
 
-              <div className="space-y-1.5 pt-2">
-                <Label className="uppercase text-[10px] tracking-widest text-primary">
-                  Comissão Apurada (R$)
-                </Label>
-                <Input
-                  type="number"
-                  value={comissao}
-                  onChange={(e) => setComissao(e.target.value)}
-                  placeholder="0.00"
-                  step="0.01"
-                  className="border-primary/30 focus-visible:ring-primary font-medium bg-primary/5"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Calculada automaticamente ({percentualComissao}% sobre R${' '}
-                  {Number(totalVendas).toFixed(2)} em vendas).
-                </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="uppercase text-[10px] tracking-widest">
+                    Salário por Fora (R$)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={salarioPorFora}
+                    onChange={(e) => setSalarioPorFora(e.target.value)}
+                    placeholder="0.00"
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="uppercase text-[10px] tracking-widest">
+                    Comissão Padrão (%)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={comissaoPercentual}
+                    onChange={(e) => setComissaoPercentual(e.target.value)}
+                    step="0.01"
+                    className="font-medium"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="uppercase text-[10px] tracking-widest">Total Vendido (R$)</Label>
-                <Input
-                  type="number"
-                  value={totalVendas}
-                  disabled
-                  className="font-medium bg-muted/50"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="uppercase text-[10px] tracking-widest">Comissão Padrão (%)</Label>
-                <Input
-                  type="number"
-                  value={percentualComissao}
-                  onChange={(e) => {
-                    setPercentualComissao(e.target.value)
-                    setComissao(String(Number(totalVendas) * (Number(e.target.value) / 100)))
-                  }}
-                  step="0.01"
-                  className="font-medium"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="uppercase text-[10px] tracking-widest">
-                  Valor Diário VR (R$)
-                </Label>
-                <Input
-                  type="number"
-                  value={valorVr}
-                  onChange={(e) => setValorVr(e.target.value)}
-                  placeholder="0.00"
-                  className="font-medium"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="uppercase text-[10px] tracking-widest">
-                  Valor Diário VT (R$)
-                </Label>
-                <Input
-                  type="number"
-                  value={valorVt}
-                  onChange={(e) => setValorVt(e.target.value)}
-                  placeholder="0.00"
-                  className="font-medium"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="uppercase text-[10px] tracking-widest">
+                    Salário Líquido (R$)
+                  </Label>
+                  <Input
+                    type="number"
+                    value={salarioLiquido}
+                    onChange={(e) => setSalarioLiquido(e.target.value)}
+                    placeholder="0.00"
+                    className="font-medium"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="uppercase text-[10px] tracking-widest">VT Diário (R$)</Label>
+                  <Input
+                    type="number"
+                    value={valorVtDia}
+                    onChange={(e) => setValorVtDia(e.target.value)}
+                    placeholder="0.00"
+                    className="font-medium"
+                  />
+                </div>
               </div>
             </div>
 
@@ -315,23 +289,23 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
               </Label>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Salário Base:</span>
-                <span className="font-medium">R$ {baseVal.toFixed(2)}</span>
+                <span className="font-medium">{formatCurrency(baseVal)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Descontos (INSS/IR):</span>
-                <span className="text-destructive">- R$ {descVal.toFixed(2)}</span>
+                <span className="text-destructive">- {formatCurrency(descVal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Adicionais (VR/VT):</span>
-                <span className="text-emerald-500">+ R$ {adicVal.toFixed(2)}</span>
+                <span className="text-muted-foreground">Adicionais (VT):</span>
+                <span className="text-emerald-500">+ {formatCurrency(adicVal)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Comissão:</span>
-                <span className="text-emerald-500 font-medium">+ R$ {comVal.toFixed(2)}</span>
+                <span className="text-muted-foreground">Salário por Fora:</span>
+                <span className="text-emerald-500 font-medium">+ {formatCurrency(porForaVal)}</span>
               </div>
               <div className="flex justify-between font-bold pt-3 border-t border-border mt-3 text-base">
-                <span>Salário Líquido:</span>
-                <span>R$ {liqVal.toFixed(2)}</span>
+                <span>Salário Líquido Calculado:</span>
+                <span>{formatCurrency(liqVal)}</span>
               </div>
             </div>
 
@@ -354,7 +328,7 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
       {historico.length > 0 && (
         <div className="space-y-3 mt-8">
           <Label className="uppercase text-[10px] tracking-widest text-muted-foreground">
-            Histórico de Comissões e Folhas
+            Histórico de Folhas
           </Label>
           <div className="space-y-2">
             {historico.map((h) => (
@@ -367,14 +341,14 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
                     {String(h.mes).padStart(2, '0')}/{h.ano}
                   </span>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Liq: R$ {Number(h.salario_liquido).toFixed(2)}
+                    Liq: {formatCurrency(h.salario_liquido)}
                   </p>
                 </div>
                 <div className="text-right">
                   <span className="text-primary font-medium text-xs uppercase tracking-widest">
-                    Comissão
+                    Adicionais
                   </span>
-                  <p className="text-emerald-500 font-bold">R$ {Number(h.comissao).toFixed(2)}</p>
+                  <p className="text-emerald-500 font-bold">{formatCurrency(h.adicionais || 0)}</p>
                 </div>
               </div>
             ))}

@@ -12,3 +12,19 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Add any other utility functions here
+
+export function formatCurrency(value: number | null | undefined): string {
+  const num = Number(value)
+  if (value === null || value === undefined || isNaN(num)) {
+    return 'Não informado'
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(num)
+}
+
+export function displayOrNa(value: string | null | undefined): string {
+  if (!value || value.trim() === '') return 'Não informado'
+  return value
+}

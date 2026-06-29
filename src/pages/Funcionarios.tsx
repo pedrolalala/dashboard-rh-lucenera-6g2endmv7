@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Filter, PlusCircle, ShieldAlert, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -32,37 +32,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
+import {
+  fetchEmployees,
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
+  type EmployeeComplete,
+} from '@/services/funcionarios'
 
-export type Employee = {
-  id: string
-  name: string
-  departmentId: string
-  departmentName: string
-  role: string
-  status: 'Ativo' | 'Inativo'
-  email: string
-  phone: string
-  cpf: string
-  endereco_completo?: string
-  admissionDate: string
-  data_aniversario?: string
-  salary: number
-  salario_liquido?: number
-  comissao_padrao?: number
-  empresa?: string
-  salario_por_fora?: number
-  tipo_contratacao?: string
-}
+export type Employee = EmployeeComplete
 
 export default function Funcionarios() {
   const [employees, setEmployees] = useState<Employee[]>([])
-  const [departments, setDepartments] = useState<{ id: string; nome: string }[]>([])
   const [search, setSearch] = useState('')
-  const [deptFilter, setDeptFilter] = useState('Todos')
   const [empresaFilter, setEmpresaFilter] = useState('Todas')
+  const [statusFilter, setStatusFilter] = useState('Ativos')
   const [isLoading, setIsLoading] = useState(true)
 
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -73,51 +59,30 @@ export default function Funcionarios() {
   const { toast } = useToast()
   const navigate = useNavigate()
 
-  const fetchEmployees = async () => {
+  const loadEmployees = async () => {
     setIsLoading(true)
-    const { data } = await supabase.from('funcionarios').select('*, departamentos(nome)')
-    if (data) {
-      setEmployees(
-        data.map((d: any) => ({
-          id: d.id,
-          name: d.nome,
-          email: d.email,
-          phone: d.telefone || '',
-          cpf: d.cpf || '',
-          endereco_completo: d.endereco_completo || '',
-          admissionDate: d.data_admissao
-            ? new Date(d.data_admissao).toISOString().split('T')[0]
-            : '',
-          data_aniversario: d.data_aniversario
-            ? new Date(d.data_aniversario).toISOString().split('T')[0]
-            : '',
-          departmentId: d.departamento_id || '',
-          departmentName: d.departamentos?.nome || 'Sem Departamento',
-          role: d.cargo || '',
-          salary: Number(d.salario_base) || 0,
-          salario_liquido: Number(d.salario_liquido) || 0,
-          comissao_padrao: Number(d.comissao_padrao) || 0,
-          status: (d.status as 'Ativo' | 'Inativo') || 'Ativo',
-          empresa: d.empresa || '',
-          salario_por_fora: Number(d.salario_por_fora) || 0,
-          tipo_contratacao: d.tipo_contratacao || '',
-        })),
-      )
+    try {
+      const data = await fetchEmployees()
+      setEmployees(data)
+    } catch (err: any) {
+      toast({ title: 'Erro ao carregar', description: err.message, variant: 'destructive' })
     }
     setIsLoading(false)
   }
 
   useEffect(() => {
     if (user && user.app_role === 'admin') {
-      fetchEmployees()
-      supabase
-        .from('departamentos')
-        .select('*')
-        .then(({ data }) => {
-          if (data) setDepartments(data)
-        })
+      loadEmployees()
     }
   }, [user])
+
+  const empresaOptions = useMemo(() => {
+    const set = new Set<string>()
+    employees.forEach((e) => {
+      if (e.empresa) set.add(e.empresa)
+    })
+    return Array.from(set).sort()
+  }, [employees])
 
   if (user && !user.app_role) {
     return (
@@ -146,11 +111,13 @@ export default function Funcionarios() {
   }
 
   const filteredEmployees = employees.filter((emp) => {
-    const matchesSearch = emp.name.toLowerCase().includes(search.toLowerCase())
-    const matchesDept = deptFilter === 'Todos' || emp.departmentId === deptFilter
+    const matchesSearch = emp.nome.toLowerCase().includes(search.toLowerCase())
     const matchesEmpresa = empresaFilter === 'Todas' || emp.empresa === empresaFilter
-    const isAtivo = emp.status === 'Ativo'
-    return matchesSearch && matchesDept && matchesEmpresa && isAtivo
+    const matchesStatus =
+      statusFilter === 'Todos' ||
+      (statusFilter === 'Ativos' && emp.ativo) ||
+      (statusFilter === 'Inativos' && !emp.ativo)
+    return matchesSearch && matchesEmpresa && matchesStatus
   })
 
   const handleCreate = () => {
@@ -164,62 +131,29 @@ export default function Funcionarios() {
   }
 
   const handleSave = async (data: any) => {
-    let data_elegibilidade = null
-    if (data.admissionDate) {
-      const admissao = new Date(data.admissionDate)
-      admissao.setFullYear(admissao.getFullYear() + 1)
-      data_elegibilidade = admissao.toISOString().split('T')[0]
-    }
-
-    const payload = {
-      nome: data.name,
-      email: data.email,
-      telefone: data.phone,
-      cpf: data.cpf,
-      endereco_completo: data.endereco_completo || null,
-      data_admissao: data.admissionDate ? data.admissionDate : null,
-      data_elegibilidade_ferias: data_elegibilidade,
-      data_aniversario: data.data_aniversario ? data.data_aniversario : null,
-      departamento_id: data.departmentId,
-      cargo: data.role,
-      salario_base: data.salary,
-      salario_liquido: data.salario_liquido || 0,
-      comissao_padrao: data.comissao_padrao,
-      status: data.status,
-      empresa: data.empresa,
-      salario_por_fora: data.salario_por_fora || 0,
-      tipo_contratacao: data.tipo_contratacao || null,
-    }
-
-    if (editingEmp) {
-      const { error } = await supabase.from('funcionarios').update(payload).eq('id', editingEmp.id)
-      if (!error) {
+    try {
+      if (editingEmp) {
+        await updateEmployee(editingEmp.id, data)
         toast({ title: 'Funcionário atualizado com sucesso!' })
-        fetchEmployees()
-        setIsSheetOpen(false)
       } else {
-        toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' })
-      }
-    } else {
-      const { error } = await supabase.from('funcionarios').insert(payload)
-      if (!error) {
+        await createEmployee(data)
         toast({ title: 'Funcionário criado com sucesso!' })
-        fetchEmployees()
-        setIsSheetOpen(false)
-      } else {
-        toast({ title: 'Erro ao criar', description: error.message, variant: 'destructive' })
       }
+      await loadEmployees()
+      setIsSheetOpen(false)
+    } catch (err: any) {
+      toast({ title: 'Erro ao salvar', description: err.message, variant: 'destructive' })
     }
   }
 
   const confirmDelete = async () => {
     if (deleteId) {
-      const { error } = await supabase.from('funcionarios').delete().eq('id', deleteId)
-      if (!error) {
+      try {
+        await deleteEmployee(deleteId)
         toast({ title: 'Funcionário excluído.' })
-        fetchEmployees()
-      } else {
-        toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' })
+        await loadEmployees()
+      } catch (err: any) {
+        toast({ title: 'Erro ao excluir', description: err.message, variant: 'destructive' })
       }
       setDeleteId(null)
     }
@@ -230,10 +164,10 @@ export default function Funcionarios() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-light uppercase tracking-widest text-foreground">
-            Funcionários Ativos
+            Colaboradores
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie os registros do quadro atual de colaboradores ativos.
+            Gestão centralizada de colaboradores com dados cadastrais, financeiros e benefícios.
           </p>
         </div>
         <Button onClick={handleCreate} className="uppercase tracking-widest text-xs">
@@ -261,22 +195,21 @@ export default function Funcionarios() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Todas">Todas as Empresas</SelectItem>
-                  <SelectItem value="islight">Islight</SelectItem>
-                  <SelectItem value="Manoela">Manoela</SelectItem>
-                  <SelectItem value="Foco">Foco</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={deptFilter} onValueChange={setDeptFilter}>
-                <SelectTrigger className="w-full sm:w-[200px] bg-transparent">
-                  <SelectValue placeholder="Departamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Todos">Todos os Departamentos</SelectItem>
-                  {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.nome}
+                  {empresaOptions.map((e) => (
+                    <SelectItem key={e} value={e}>
+                      {e}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[140px] bg-transparent">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Ativos">Ativos</SelectItem>
+                  <SelectItem value="Inativos">Inativos</SelectItem>
+                  <SelectItem value="Todos">Todos</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -308,7 +241,6 @@ export default function Funcionarios() {
           {!editingEmp ? (
             <EmployeeForm
               employee={undefined}
-              departments={departments}
               onSubmit={handleSave}
               onCancel={() => setIsSheetOpen(false)}
             />
@@ -325,7 +257,6 @@ export default function Funcionarios() {
               <TabsContent value="dados" className="mt-0">
                 <EmployeeForm
                   employee={editingEmp}
-                  departments={departments}
                   onSubmit={handleSave}
                   onCancel={() => setIsSheetOpen(false)}
                 />
@@ -345,7 +276,8 @@ export default function Funcionarios() {
               Excluir Funcionário?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O registro será removido permanentemente.
+              Esta ação não pode ser desfeita. O registro será removido permanentemente de todas as
+              tabelas relacionadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

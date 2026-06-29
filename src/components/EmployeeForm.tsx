@@ -23,28 +23,29 @@ import {
 } from '@/components/ui/form'
 
 const schema = z.object({
-  name: z.string().min(2, 'Nome muito curto. Insira o nome completo.'),
-  email: z.string().email('E-mail inválido. Insira um e-mail válido.'),
-  phone: z.string().optional(),
+  nome: z.string().min(2, 'Nome muito curto. Insira o nome completo.'),
+  cargo: z.string().optional(),
+  data_admissao: z.string().optional(),
+  ativo: z.boolean().default(true),
   cpf: z.string().optional(),
-  endereco_completo: z.string().optional(),
-  admissionDate: z.string().optional(),
-  data_aniversario: z.string().optional(),
-  departmentId: z.string().min(1, 'Selecione um departamento.'),
-  role: z.string().optional(),
-  salary: z.coerce.number().optional(),
-  salario_liquido: z.coerce.number().optional(),
-  comissao_padrao: z.coerce.number().optional(),
-  status: z.enum(['Ativo', 'Inativo']),
-  empresa: z.string().optional(),
+  rg: z.string().optional(),
+  data_nascimento: z.string().optional(),
+  endereco: z.string().optional(),
+  telefone: z.string().optional(),
+  email: z.string().email('E-mail inválido.').optional().or(z.literal('')),
+  salario_base: z.coerce.number().optional(),
   salario_por_fora: z.coerce.number().optional(),
-  tipo_contratacao: z.string().optional(),
+  comissao_percentual: z.coerce.number().optional(),
+  salario_liquido: z.coerce.number().optional(),
+  empresa: z.string().optional(),
+  valor_vt_dia: z.coerce.number().optional(),
 })
+
+type FormData = z.infer<typeof schema>
 
 interface EmployeeFormProps {
   employee?: Employee
-  departments: { id: string; nome: string }[]
-  onSubmit: (data: z.infer<typeof schema>) => void
+  onSubmit: (data: any) => void
   onCancel: () => void
 }
 
@@ -60,6 +61,7 @@ const Field = ({ control, name, label, type = 'text', placeholder = '' }: any) =
             type={type}
             placeholder={placeholder}
             {...field}
+            value={field.value ?? ''}
             step={type === 'number' ? '0.01' : undefined}
           />
         </FormControl>
@@ -69,71 +71,95 @@ const Field = ({ control, name, label, type = 'text', placeholder = '' }: any) =
   />
 )
 
-export function EmployeeForm({ employee, departments, onSubmit, onCancel }: EmployeeFormProps) {
-  const form = useForm<z.infer<typeof schema>>({
+export function EmployeeForm({ employee, onSubmit, onCancel }: EmployeeFormProps) {
+  const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: employee
       ? {
-          name: employee.name,
-          email: employee.email,
-          phone: employee.phone || '',
+          nome: employee.nome,
+          cargo: employee.cargo || '',
+          data_admissao: employee.data_admissao
+            ? new Date(employee.data_admissao).toISOString().split('T')[0]
+            : '',
+          ativo: employee.ativo,
           cpf: employee.cpf || '',
-          endereco_completo: employee.endereco_completo || '',
-          admissionDate: employee.admissionDate || '',
-          data_aniversario: employee.data_aniversario || '',
-          departmentId: employee.departmentId,
-          role: employee.role || '',
-          salary: employee.salary || 0,
-          salario_liquido: employee.salario_liquido || 0,
-          comissao_padrao: employee.comissao_padrao || 0,
-          status: employee.status,
-          empresa: employee.empresa || '',
+          rg: employee.rg || '',
+          data_nascimento: employee.data_nascimento
+            ? new Date(employee.data_nascimento).toISOString().split('T')[0]
+            : '',
+          endereco: employee.endereco || '',
+          telefone: employee.telefone || '',
+          email: employee.email || '',
+          salario_base: employee.salario_base || 0,
           salario_por_fora: employee.salario_por_fora || 0,
-          tipo_contratacao: employee.tipo_contratacao || '',
+          comissao_percentual: employee.comissao_percentual || 0,
+          salario_liquido: employee.salario_liquido || 0,
+          empresa: employee.empresa || '',
+          valor_vt_dia: employee.valor_vt_dia || 0,
         }
       : {
-          name: '',
-          email: '',
-          phone: '',
+          nome: '',
+          cargo: '',
+          data_admissao: '',
+          ativo: true,
           cpf: '',
-          endereco_completo: '',
-          admissionDate: '',
-          data_aniversario: '',
-          departmentId: '',
-          role: '',
-          salary: 0,
-          salario_liquido: 0,
-          comissao_padrao: 0,
-          status: 'Ativo',
-          empresa: '',
+          rg: '',
+          data_nascimento: '',
+          endereco: '',
+          telefone: '',
+          email: '',
+          salario_base: 0,
           salario_por_fora: 0,
-          tipo_contratacao: '',
+          comissao_percentual: 0,
+          salario_liquido: 0,
+          empresa: '',
+          valor_vt_dia: 0,
         },
   })
 
+  const handleSubmit = (data: FormData) => {
+    onSubmit({
+      ...data,
+      email: data.email || undefined,
+      data_nascimento: data.data_nascimento || undefined,
+      data_admissao: data.data_admissao || undefined,
+    })
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <Field
           control={form.control}
-          name="name"
+          name="nome"
           label="Nome Completo *"
           placeholder="Ex: João da Silva"
         />
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            control={form.control}
+            name="cargo"
+            label="Cargo"
+            placeholder="Ex: Analista Pleno"
+          />
+          <Field control={form.control} name="data_admissao" label="Data de Admissão" type="date" />
+        </div>
+
         <FormField
           control={form.control}
-          name="endereco_completo"
+          name="endereco"
           render={({ field }) => (
             <FormItem>
               <FormLabel className="uppercase text-[10px] tracking-widest">
-                Endereço Completo (com CEP)
+                Endereço Completo
               </FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Rua, Número, Complemento, Bairro, Cidade - UF, CEP"
                   className="resize-none"
                   {...field}
+                  value={field.value ?? ''}
                 />
               </FormControl>
               <FormMessage />
@@ -145,22 +171,22 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
           <Field
             control={form.control}
             name="email"
-            label="E-mail *"
+            label="E-mail"
             type="email"
             placeholder="joao@lucenera.com"
           />
           <Field
             control={form.control}
-            name="phone"
+            name="telefone"
             label="Telefone"
             placeholder="(11) 99999-9999"
           />
           <Field control={form.control} name="cpf" label="CPF" placeholder="000.000.000-00" />
-          <Field control={form.control} name="admissionDate" label="Data de Admissão" type="date" />
+          <Field control={form.control} name="rg" label="RG" placeholder="00.000.000-0" />
           <Field
             control={form.control}
-            name="data_aniversario"
-            label="Data de Aniversário"
+            name="data_nascimento"
+            label="Data de Nascimento"
             type="date"
           />
           <FormField
@@ -185,85 +211,51 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="departmentId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="uppercase text-[10px] tracking-widest">
-                  Departamento *
-                </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {departments.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Field
-            control={form.control}
-            name="role"
-            label="Cargo"
-            placeholder="Ex: Analista Pleno"
-          />
-          <Field control={form.control} name="salary" label="Salário Base (R$)" type="number" />
-          <Field
-            control={form.control}
-            name="salario_liquido"
-            label="Salário Líquido (R$)"
-            type="number"
-          />
-          <Field
-            control={form.control}
-            name="comissao_padrao"
-            label="Comissão Padrão (%)"
-            type="number"
-          />
-          <Field
-            control={form.control}
-            name="salario_por_fora"
-            label="Salário por Fora (R$)"
-            type="number"
-            placeholder="0.00"
-          />
-          <FormField
-            control={form.control}
-            name="tipo_contratacao"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="uppercase text-[10px] tracking-widest">
-                  Tipo de Contratação
-                </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="CLT">CLT</SelectItem>
-                    <SelectItem value="PJ">PJ</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
+
+        <div className="border-t border-border pt-4 space-y-4">
+          <h3 className="uppercase text-[10px] tracking-widest text-muted-foreground">
+            Dados Financeiros
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field
+              control={form.control}
+              name="salario_base"
+              label="Salário Base (R$)"
+              type="number"
+            />
+            <Field
+              control={form.control}
+              name="salario_liquido"
+              label="Salário Líquido (R$)"
+              type="number"
+            />
+            <Field
+              control={form.control}
+              name="salario_por_fora"
+              label="Salário por Fora (R$)"
+              type="number"
+              placeholder="0.00"
+            />
+            <Field
+              control={form.control}
+              name="comissao_percentual"
+              label="Comissão Padrão (%)"
+              type="number"
+            />
+            <Field
+              control={form.control}
+              name="valor_vt_dia"
+              label="Vale Transporte / Dia (R$)"
+              type="number"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+
         <FormField
           control={form.control}
-          name="status"
+          name="ativo"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between border-border border p-3 bg-muted/10">
               <div className="space-y-0.5">
@@ -271,18 +263,16 @@ export function EmployeeForm({ employee, departments, onSubmit, onCancel }: Empl
                   Status Ativo
                 </FormLabel>
                 <p className="text-xs text-muted-foreground">
-                  Desative para suspender o acesso do colaborador.
+                  Desative para suspender o colaborador.
                 </p>
               </div>
               <FormControl>
-                <Switch
-                  checked={field.value === 'Ativo'}
-                  onCheckedChange={(c) => field.onChange(c ? 'Ativo' : 'Inativo')}
-                />
+                <Switch checked={field.value} onCheckedChange={field.onChange} />
               </FormControl>
             </FormItem>
           )}
         />
+
         <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button
             type="button"

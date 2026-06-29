@@ -11,11 +11,61 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { formatCurrency, displayOrNa } from '@/lib/utils'
 
 interface EmployeeTableProps {
   data: Employee[]
   onEdit: (employee: Employee) => void
   onDelete: (id: string) => void
+}
+
+function RemunerationCell({ emp }: { emp: Employee }) {
+  const hasBaseSalary = emp.salario_base > 0
+  const hasLiquidSalary = emp.salario_liquido > 0
+  const hasPorFora = emp.salario_por_fora > 0
+  const hasCommission = emp.comissao_percentual > 0
+
+  if (hasBaseSalary || hasLiquidSalary) {
+    return (
+      <div className="flex flex-col gap-0.5">
+        {hasBaseSalary && (
+          <span className="text-sm font-medium">Base: {formatCurrency(emp.salario_base)}</span>
+        )}
+        {hasLiquidSalary && (
+          <span className="text-xs text-muted-foreground">
+            Líq: {formatCurrency(emp.salario_liquido)}
+          </span>
+        )}
+        {hasPorFora && (
+          <span className="text-xs text-muted-foreground">
+            Extra: {formatCurrency(emp.salario_por_fora)}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  if (hasPorFora || hasCommission) {
+    return (
+      <div className="flex flex-col gap-0.5">
+        {hasPorFora && (
+          <span className="text-sm font-medium text-primary">
+            Extra: {formatCurrency(emp.salario_por_fora)}
+          </span>
+        )}
+        {hasCommission && (
+          <span className="text-xs text-muted-foreground">
+            Comissão: {emp.comissao_percentual}%
+          </span>
+        )}
+        <span className="text-[10px] text-muted-foreground italic">
+          Sem salário base registrado
+        </span>
+      </div>
+    )
+  }
+
+  return <span className="text-xs text-muted-foreground italic">Não informado</span>
 }
 
 export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
@@ -25,10 +75,10 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
         <TableRow>
           <TableHead>Colaborador</TableHead>
           <TableHead>Contato & Endereço</TableHead>
-          <TableHead>Departamento</TableHead>
+          <TableHead>Cargo</TableHead>
           <TableHead>Empresa</TableHead>
-          <TableHead>Cargo & Contrato</TableHead>
           <TableHead>Remuneração</TableHead>
+          <TableHead>VT/dia</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
@@ -50,69 +100,69 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
               <div className="flex items-center gap-3">
                 <Avatar className="size-8 border border-border">
                   <AvatarFallback className="bg-muted text-foreground font-medium text-xs">
-                    {emp.name.substring(0, 2).toUpperCase()}
+                    {emp.nome.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span>{emp.name}</span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm">{emp.email}</span>
-                <div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-                  {emp.phone && <span>{emp.phone}</span>}
-                  {emp.cpf && <span>CPF: {emp.cpf}</span>}
+                <div className="flex flex-col">
+                  <span>{emp.nome}</span>
+                  {emp.data_admissao && (
+                    <span className="text-xs text-muted-foreground">
+                      Admissão: {new Date(emp.data_admissao).toLocaleDateString('pt-BR')}
+                    </span>
+                  )}
                 </div>
-                {emp.endereco_completo && (
-                  <span
-                    className="text-xs text-muted-foreground line-clamp-1"
-                    title={emp.endereco_completo}
-                  >
-                    {emp.endereco_completo}
-                  </span>
-                )}
-              </div>
-            </TableCell>
-            <TableCell>{emp.departmentName}</TableCell>
-            <TableCell>{emp.empresa || '-'}</TableCell>
-            <TableCell>
-              <div className="flex flex-col gap-0.5 items-start">
-                <span className="text-sm">{emp.role || '-'}</span>
-                {emp.tipo_contratacao && (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] px-1 py-0 h-4 uppercase tracking-wider"
-                  >
-                    {emp.tipo_contratacao}
-                  </Badge>
-                )}
               </div>
             </TableCell>
             <TableCell>
               <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium">
-                  Base: R$ {Number(emp.salary || 0).toFixed(2)}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Líq: R$ {Number(emp.salario_liquido || 0).toFixed(2)}
-                </span>
-                {Number(emp.salario_por_fora) > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    Extra: R$ {Number(emp.salario_por_fora).toFixed(2)}
+                <span className="text-sm">{displayOrNa(emp.email)}</span>
+                <div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+                  {emp.telefone ? <span>{emp.telefone}</span> : null}
+                  {emp.cpf ? <span>CPF: {emp.cpf}</span> : null}
+                </div>
+                {emp.endereco ? (
+                  <span className="text-xs text-muted-foreground line-clamp-1" title={emp.endereco}>
+                    {emp.endereco}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">
+                    Endereço: Não informado
                   </span>
                 )}
               </div>
+            </TableCell>
+            <TableCell>
+              <span className="text-sm">{displayOrNa(emp.cargo)}</span>
+            </TableCell>
+            <TableCell>
+              {emp.empresa ? (
+                <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                  {emp.empresa}
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">Não informado</span>
+              )}
+            </TableCell>
+            <TableCell>
+              <RemunerationCell emp={emp} />
+            </TableCell>
+            <TableCell>
+              {emp.valor_vt_dia > 0 ? (
+                <span className="text-sm">{formatCurrency(emp.valor_vt_dia)}</span>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">Não informado</span>
+              )}
             </TableCell>
             <TableCell>
               <Badge
-                variant={emp.status === 'Ativo' ? 'default' : 'outline'}
+                variant={emp.ativo ? 'default' : 'outline'}
                 className={
-                  emp.status === 'Ativo'
+                  emp.ativo
                     ? 'bg-foreground text-background hover:bg-foreground/90 uppercase tracking-widest text-[10px]'
                     : 'bg-transparent text-muted-foreground border-border uppercase tracking-widest text-[10px]'
                 }
               >
-                {emp.status}
+                {emp.ativo ? 'Ativo' : 'Inativo'}
               </Badge>
             </TableCell>
             <TableCell className="text-right">
