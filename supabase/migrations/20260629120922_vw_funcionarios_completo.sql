@@ -1,5 +1,6 @@
 -- Create comprehensive employee view joining all related tables
-CREATE OR REPLACE VIEW public.vw_funcionarios_completo AS
+DROP VIEW IF EXISTS public.vw_funcionarios_completo;
+CREATE VIEW public.vw_funcionarios_completo AS
 SELECT
   fn.id,
   fn.nome,
