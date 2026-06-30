@@ -18,6 +18,7 @@ const Faltas = lazy(() => import('./pages/Faltas'))
 const Relatorios = lazy(() => import('./pages/Relatorios'))
 const ValeTransporte = lazy(() => import('./pages/ValeTransporte'))
 const Cargos = lazy(() => import('./pages/Cargos'))
+const Comissao = lazy(() => import('./pages/Comissao'))
 const Configuracoes = lazy(() => import('./pages/Configuracoes'))
 const Login = lazy(() => import('./pages/Login'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -85,7 +86,7 @@ const App = () => (
 
                   <Route element={<AdminGerenteRoute />}>
                     <Route path="/vale-transporte" element={<ValeTransporte />} />
-                    <Route path="/funcionarios" element={<Funcionarios />} />
+                    <Route path="/comissao" element={<Comissao />} />
                     <Route path="/folha-pagamento" element={<FolhaPagamento />} />
                     <Route path="/avaliacoes" element={<Avaliacoes />} />
                     <Route path="/relatorios" element={<Relatorios />} />

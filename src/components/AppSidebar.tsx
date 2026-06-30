@@ -8,6 +8,7 @@ import {
   UserX,
   Star,
   FileText,
+  DollarSign,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -35,6 +36,7 @@ const navResultados = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Avaliações', href: '/avaliacoes', icon: Star },
   { name: 'Relatório de Métricas', href: '/relatorios', icon: FileText },
+  { name: 'Comissão', href: '/comissao', icon: DollarSign },
 ]
 
 export function AppSidebar() {
