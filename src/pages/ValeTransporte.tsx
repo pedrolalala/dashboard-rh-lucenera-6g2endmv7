@@ -111,12 +111,26 @@ export default function ValeTransporte() {
       if (emp) filteredBenef = filteredBenef.filter((b: any) => b.empresa === emp.nome)
     }
 
+    const { data: funcEmpData } = await supabase
+      .from('funcionarios')
+      .select('id, empresa_id, empresa')
+      .in(
+        'id',
+        funcsData.map((f) => f.id),
+      )
+    const funcEmpMap = new Map<string, { empresa_id: string | null; empresa: string | null }>()
+    for (const fe of funcEmpData || []) {
+      funcEmpMap.set(fe.id, { empresa_id: fe.empresa_id, empresa: fe.empresa })
+    }
+
     const funcionarios: any[] = funcsData.map((f) => {
       const benef = filteredBenef.find((b: any) => b.funcionario_id === f.id)
+      const funcEmp = funcEmpMap.get(f.id)
       return {
         id: f.id,
         nome: f.nome,
-        empresa_nome: benef?.empresa || null,
+        empresa_nome: benef?.empresa || funcEmp?.empresa || null,
+        empresa_id: funcEmp?.empresa_id || null,
         valor_vt_dia: Number(benef?.valor_vt_dia) || 0,
       }
     })

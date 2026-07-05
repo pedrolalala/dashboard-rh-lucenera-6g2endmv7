@@ -13,6 +13,7 @@ export interface FuncionarioVT {
   id: string
   nome: string
   empresa_nome: string | null
+  empresa_id: string | null
   valor_vt_dia: number
 }
 
@@ -107,9 +108,21 @@ export function buildCalculos(
       })
       continue
     }
-    const empresa = func.empresa_nome
-      ? empresas.find((e) => e.nome === func.empresa_nome) || null
-      : null
+    const empresa = func.empresa_id
+      ? empresas.find((e) => e.id === func.empresa_id) || null
+      : func.empresa_nome
+        ? empresas.find(
+            (e) =>
+              e.nome === func.empresa_nome ||
+              e.razao_social === func.empresa_nome ||
+              (e.nome &&
+                func.empresa_nome &&
+                e.nome.toLowerCase() === func.empresa_nome.toLowerCase()) ||
+              (e.razao_social &&
+                func.empresa_nome &&
+                e.razao_social.toLowerCase() === func.empresa_nome.toLowerCase()),
+          ) || null
+        : null
     const diasFaltados = faltasMap.get(func.id) || 0
     const diasLiquidos = Math.max(0, diasUteis - diasFaltados)
     calculos.push({
