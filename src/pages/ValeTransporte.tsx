@@ -68,10 +68,26 @@ export default function ValeTransporte() {
       : empresas.find((e) => e.id === empresa)?.nome || empresa
   const mesLabel = `${MONTHS.find((m) => m.value === mes)?.label || ''}/${ano}`
 
+  const validateConnection = async (): Promise<boolean> => {
+    const { error } = await supabase.from('empresas').select('id').limit(1)
+    if (error) {
+      toast({
+        title: 'Erro de conexão',
+        description: 'Não foi possível validar a conexão com o banco de dados.',
+        variant: 'destructive',
+      })
+      return false
+    }
+    return true
+  }
+
   const fetchCalculos = async (): Promise<{
     calculos: CalculoVT[]
     errors: CalculoError[]
   } | null> => {
+    const isConnected = await validateConnection()
+    if (!isConnected) return null
+
     const diasUteis = calcularDiasUteis(year, month, feriados)
     const feriadosCount = countFeriadosInMonth(year, month, feriados)
 
@@ -126,6 +142,7 @@ export default function ValeTransporte() {
       nome: e.nome,
       razao_social: e.razao_social,
       cnpj: e.cnpj,
+      cidade: e.cidade,
     }))
     return buildCalculos(funcionarios, faltasData, diasUteis, feriadosCount, empresasVT)
   }

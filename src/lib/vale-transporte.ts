@@ -6,6 +6,7 @@ export interface EmpresaVT {
   nome: string
   razao_social: string | null
   cnpj: string | null
+  cidade: string | null
 }
 
 export interface FuncionarioVT {
@@ -136,18 +137,22 @@ function esc(s: string): string {
 function createDocxBlob(c: CalculoVT, year: number, month: number): Blob {
   const enc = new TextEncoder()
   const emp = c.empresa
-  const empName = emp?.razao_social || emp?.nome || c.funcionario.empresa_nome || 'N/A'
+  const empName = emp?.razao_social || emp?.nome || 'N/A'
+  const empCidade = emp?.cidade || 'Ribeirão Preto'
   const lastDay = new Date(year, month + 1, 0).getDate()
   const mm = String(month + 1).padStart(2, '0')
   const dataInicio = `01/${mm}/${year}`
   const dataFim = `${String(lastDay).padStart(2, '0')}/${mm}/${year}`
-  const mesExtenso = MONTH_NAMES_PT[month]
+  const now = new Date()
+  const diaHoje = now.getDate()
+  const mesHoje = MONTH_NAMES_PT[now.getMonth()]
+  const anoHoje = now.getFullYear()
   const valorTotal = formatBRL(c.valorTotal)
   const valorExtenso = valorPorExtenso(c.valorTotal)
 
   const bodyText = `Declaro que recebi a quantia de ${valorTotal} (${valorExtenso}) passes de Vale Transporte de ${empName}, referente ao período de ${dataInicio} a ${dataFim}.`
 
-  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="480"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">RECIBO VALE TRANSPORTE</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="240" w:line="360" w:lineRule="auto"/></w:pPr><w:r><w:t xml:space="preserve">${esc(bodyText)}</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="240"/></w:pPr><w:r><w:t xml:space="preserve">Por ser verdade, firmo o presente.</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="480"/></w:pPr><w:r><w:t xml:space="preserve">Ribeirão Preto, ${lastDay} de ${mesExtenso} de ${year}</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="60"/></w:pPr><w:r><w:t xml:space="preserve">...............................................................</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${esc(c.funcionario.nome)}</w:t></w:r></w:p><w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="480"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">RECIBO VALE TRANSPORTE</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="240" w:line="360" w:lineRule="auto"/></w:pPr><w:r><w:t xml:space="preserve">${esc(bodyText)}</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="240"/></w:pPr><w:r><w:t xml:space="preserve">Por ser verdade, firmo o presente.</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="480"/></w:pPr><w:r><w:t xml:space="preserve">${esc(empCidade)}, ${diaHoje} de ${mesHoje} de ${anoHoje}</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="60"/></w:pPr><w:r><w:t xml:space="preserve">...............................................................</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${esc(c.funcionario.nome)}</w:t></w:r></w:p><w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`
   const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`
   const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`
   const docRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`
