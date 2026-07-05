@@ -1,138 +1,149 @@
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, parseISO } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { createZipBlob } from './zip-utils'
 
-export const FALTAS_INTEGRAIS_STATUS = [
-  'ausente',
-  'falta_injustificada',
-  'atestado',
-  'licenca_maternidade',
-  'licenca_paternidade',
-  'licenca_obito',
-  'licenca_casamento',
-  'licenca_militar',
-  'licenca_medica',
-]
+export interface EmpresaVT {
+  id: string
+  nome: string
+  razao_social: string | null
+  cnpj: string | null
+}
 
 export interface FuncionarioVT {
   id: string
   nome: string
-  empresa: string | null
-  cpf: string | null
-  valor_vt_dia: number | null
+  empresa_nome: string | null
+  valor_vt_dia: number
 }
 
 export interface CalculoVT {
   funcionario: FuncionarioVT
+  empresa: EmpresaVT | null
   diasUteis: number
   diasFaltados: number
-  diasEfetivos: number
+  feriadosCount: number
   valorDiario: number
   valorTotal: number
 }
 
-export function calcularDiasUteis(
-  year: number,
-  month: number,
-  feriados: { date: string }[],
-): number {
-  const start = startOfMonth(new Date(year, month))
-  const end = endOfMonth(new Date(year, month))
-  const feriadosMes = feriados
-    .filter((f) => {
-      const d = parseISO(f.date)
-      return d.getMonth() === month && d.getFullYear() === year
+export interface CalculoError {
+  funcionario_id: string
+  funcionario_nome: string
+  erro: string
+}
+
+const SP_HOLIDAYS: Array<{ month: number; day: number }> = [{ month: 6, day: 9 }]
+
+function getHolidayKeys(year: number, month: number, feriados: any[]): Set<string> {
+  const keys = new Set(
+    feriados.map((f: any) => {
+      const d = new Date(f.date + 'T00:00:00')
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+    }),
+  )
+  SP_HOLIDAYS.forEach((h) => keys.add(`${year}-${h.month}-${h.day}`))
+  return keys
+}
+
+export function calcularDiasUteis(year: number, month: number, feriados: any[]): number {
+  const holidayKeys = getHolidayKeys(year, month, feriados)
+  let count = 0
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dow = new Date(year, month, day).getDay()
+    if (dow === 0 || dow === 6) continue
+    if (!holidayKeys.has(`${year}-${month}-${day}`)) count++
+  }
+  return count
+}
+
+export function countFeriadosInMonth(year: number, month: number, feriados: any[]): number {
+  const holidayKeys = getHolidayKeys(year, month, feriados)
+  let count = 0
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dow = new Date(year, month, day).getDay()
+    if (dow === 0 || dow === 6) continue
+    if (holidayKeys.has(`${year}-${month}-${day}`)) count++
+  }
+  return count
+}
+
+export function buildCalculos(
+  funcionarios: FuncionarioVT[],
+  faltas: any[],
+  diasUteis: number,
+  feriadosCount: number,
+  empresas: EmpresaVT[],
+): { calculos: CalculoVT[]; errors: CalculoError[] } {
+  const faltasMap = new Map<string, number>()
+  for (const f of faltas) {
+    const id = f.funcionario_id as string
+    faltasMap.set(id, (faltasMap.get(id) || 0) + 1)
+  }
+  const calculos: CalculoVT[] = []
+  const errors: CalculoError[] = []
+  for (const func of funcionarios) {
+    if (!func.valor_vt_dia || func.valor_vt_dia <= 0) {
+      errors.push({
+        funcionario_id: func.id,
+        funcionario_nome: func.nome,
+        erro: 'Sem registro na tabela de benefícios ou valor_vt_dia zerado',
+      })
+      continue
+    }
+    const empresa = func.empresa_nome
+      ? empresas.find((e) => e.nome === func.empresa_nome) || null
+      : null
+    const diasFaltados = faltasMap.get(func.id) || 0
+    const diasLiquidos = Math.max(0, diasUteis - feriadosCount - diasFaltados)
+    calculos.push({
+      funcionario: func,
+      empresa,
+      diasUteis,
+      diasFaltados,
+      feriadosCount,
+      valorDiario: func.valor_vt_dia,
+      valorTotal: diasLiquidos * func.valor_vt_dia,
     })
-    .map((f) => format(parseISO(f.date), 'yyyy-MM-dd'))
-  return eachDayOfInterval({ start, end }).filter(
-    (d) => !isWeekend(d) && !feriadosMes.includes(format(d, 'yyyy-MM-dd')),
-  ).length
+  }
+  return { calculos, errors }
 }
 
 export function formatBRL(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 }
 
-export function buildCalculos(
-  funcs: FuncionarioVT[],
-  faltas: any[],
-  diasUteis: number,
-): CalculoVT[] {
-  return funcs.map((func) => {
-    const funcFaltas = faltas?.filter((f) => f.funcionario_id === func.id) || []
-    const diasFaltados = funcFaltas.filter(
-      (f) => f.status && FALTAS_INTEGRAIS_STATUS.includes(f.status),
-    ).length
-    const diasEfetivos = Math.max(0, diasUteis - diasFaltados)
-    const valorDiario = func.valor_vt_dia || 0
-    return {
-      funcionario: func,
-      diasUteis,
-      diasFaltados,
-      diasEfetivos,
-      valorDiario,
-      valorTotal: diasEfetivos * valorDiario,
-    }
-  })
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-export function exportarRecibosWord(calculos: CalculoVT[], empresa: string, mes: string): void {
-  if (!calculos.length) return
-  const mesFmt = format(new Date(mes + '-01T12:00:00'), 'MMMM/yyyy', { locale: ptBR })
-  const receipts = calculos
-    .map(
-      (c, i) => `
-    <div${i < calculos.length - 1 ? " class='page-break'" : ''}>
-      <div style="text-align:center;font-size:16pt;font-weight:bold;margin-bottom:20px">RECIBO DE VALE TRANSPORTE</div>
-      <p style="text-align:justify;margin-bottom:20px">Recebi da empresa <strong>${c.funcionario.empresa || 'Lucenera'}</strong>, a importância de <strong>${formatBRL(c.valorTotal)}</strong>, referente ao benefício de Vale Transporte do mês de <strong>${mesFmt}</strong>.</p>
-      <p>Dias Úteis: ${c.diasUteis}</p><p>Faltas Integrais Descontadas: ${c.diasFaltados}</p>
-      <p>Valor Líquido a Receber: ${formatBRL(c.valorTotal)}</p>
-      <p style="margin:20px 0">Por ser verdade, firmo o presente recibo.</p>
-      <div style="margin-top:50px;text-align:center"><div style="width:300px;border-top:1px solid #000;margin:0 auto 10px"></div>
-      <p>${c.funcionario.nome}</p><p>CPF: ${c.funcionario.cpf || 'Não informado'}</p><p>Data: ${format(new Date(), 'dd/MM/yyyy')}</p></div>
-    </div>`,
-    )
-    .join('')
-  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><style>body{font-family:Arial,sans-serif;font-size:12pt;line-height:1.5;color:#000}.page-break{page-break-after:always}</style></head><body>${receipts}</body></html>`
-  const link = document.createElement('a')
-  link.href = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(html)
-  link.download = `Recibos_VT_${empresa.replace(/\s+/g, '_')}_${mes}.doc`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+function docxRow(label: string, value: string): string {
+  return `<w:tr><w:tc><w:tcPr><w:tcW w:w="3500" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">${esc(label)}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1500" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${esc(value)}</w:t></w:r></w:p></w:tc></w:tr>`
 }
 
-export function gerarRelatoriosIndividuais(
-  calculos: CalculoVT[],
-  empresa: string,
-  mes: string,
-): boolean {
-  if (!calculos.length) return false
-  const mesFmt = format(new Date(mes + '-01T12:00:00'), 'MMMM/yyyy', { locale: ptBR })
-  const hoje = format(new Date(), 'dd/MM/yyyy')
-  const pages = calculos
-    .map(
-      (c, i) => `
-    <div class="page${i < calculos.length - 1 ? ' page-break' : ''}">
-      <div class="hdr"><h1>Relatório Individual de Vale Transporte</h1><h2>${empresa}</h2></div>
-      <div class="info"><p><strong>Funcionário:</strong> ${c.funcionario.nome}</p>
-      <p><strong>CPF:</strong> ${c.funcionario.cpf || 'Não informado'}</p>
-      <p><strong>Mês de Referência:</strong> ${mesFmt}</p></div>
-      <table class="bd">
-        <tr><th>Dias Úteis</th><td>${c.diasUteis}</td></tr>
-        <tr><th>Total de Faltas</th><td>${c.diasFaltados}</td></tr>
-        <tr><th>Dias Efetivos</th><td>${c.diasEfetivos}</td></tr>
-        <tr><th>Valor Diário</th><td>${formatBRL(c.valorDiario)}</td></tr>
-        <tr class="total"><th>Valor Total Mensal</th><td>${formatBRL(c.valorTotal)}</td></tr>
-      </table>
-      <div class="sig"><div class="line"></div><p>${c.funcionario.nome}</p><p>${hoje}</p></div>
-    </div>`,
-    )
-    .join('')
-  const css = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1a1a1a;padding:20px}.no-print{text-align:center;margin-bottom:20px}.no-print button{padding:10px 30px;font-size:14px;cursor:pointer;background:#2563eb;color:#fff;border:none;border-radius:6px}.page{max-width:700px;margin:0 auto;padding:40px}.page-break{page-break-after:always}.hdr{text-align:center;border-bottom:2px solid #2563eb;padding-bottom:20px;margin-bottom:30px}.hdr h1{font-size:18pt}.hdr h2{font-size:13pt;color:#555;font-weight:400;margin-top:5px}.info{background:#f8fafc;padding:20px;border-radius:8px;margin-bottom:30px}.info p{font-size:11pt;line-height:2}.bd{width:100%;border-collapse:collapse;margin-bottom:30px}.bd th,.bd td{padding:12px 16px;border:1px solid #e2e8f0;font-size:11pt}.bd th{background:#f1f5f9;width:60%;text-align:left}.bd .total th{background:#2563eb;color:#fff;font-size:13pt}.bd .total td{background:#eff6ff;font-size:13pt;font-weight:700;color:#2563eb}.sig{margin-top:60px;text-align:center}.sig .line{width:300px;border-top:1px solid #1a1a1a;margin:0 auto 10px}.sig p{font-size:10pt;color:#555;line-height:1.8}@media print{.no-print{display:none}body{padding:0}}`
-  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatórios Individuais - Vale Transporte</title><style>${css}</style></head><body><div class="no-print"><button onclick="window.print()">Imprimir / Salvar PDF</button></div>${pages}</body></html>`
-  const w = window.open('', '_blank')
-  if (!w) return false
-  w.document.write(html)
-  w.document.close()
-  return true
+function createDocxBlob(c: CalculoVT, mesLabel: string): Blob {
+  const enc = new TextEncoder()
+  const emp = c.empresa
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">RECIBO DE VALE TRANSPORTE</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">Mês: ${esc(mesLabel)}</w:t></w:r></w:p><w:p/><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Empresa: </w:t></w:r><w:r><w:t xml:space="preserve">${esc(emp?.razao_social || emp?.nome || 'N/A')}</w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">CNPJ: </w:t></w:r><w:r><w:t xml:space="preserve">${esc(emp?.cnpj || 'N/A')}</w:t></w:r></w:p><w:p/><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Funcionário: </w:t></w:r><w:r><w:t xml:space="preserve">${esc(c.funcionario.nome)}</w:t></w:r></w:p><w:p/><w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="3500"/><w:gridCol w:w="1500"/></w:tblGrid>${docxRow('Dias Úteis', String(c.diasUteis))}${docxRow('Feriados', String(c.feriadosCount))}${docxRow('Faltas', String(c.diasFaltados))}${docxRow('Dias Líquidos', String(c.diasUteis - c.feriadosCount - c.diasFaltados))}${docxRow('Valor Diário', formatBRL(c.valorDiario))}${docxRow('Valor Total', formatBRL(c.valorTotal))}</w:tbl><w:p/><w:p/><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">_________________________________________</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${esc(c.funcionario.nome)}</w:t></w:r></w:p><w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`
+  const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`
+  const docRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`
+  return createZipBlob([
+    { name: '[Content_Types].xml', data: enc.encode(ct) },
+    { name: '_rels/.rels', data: enc.encode(rels) },
+    { name: 'word/document.xml', data: enc.encode(doc) },
+    { name: 'word/_rels/document.xml.rels', data: enc.encode(docRels) },
+  ])
+}
+
+export async function gerarZipRecibos(calculos: CalculoVT[], mesLabel: string): Promise<Blob> {
+  const safeMesLabel = mesLabel.replace(/\//g, '-')
+  const folder = `Vale transporte do mes ${safeMesLabel}`
+  const files: Array<{ name: string; data: Uint8Array }> = []
+  for (const c of calculos) {
+    const blob = createDocxBlob(c, mesLabel)
+    const data = new Uint8Array(await blob.arrayBuffer())
+    const safeName = c.funcionario.nome.replace(/[^a-zA-Z0-9_\- ]/g, '').trim() || c.funcionario.id
+    files.push({ name: `${folder}/${safeName}.docx`, data })
+  }
+  return createZipBlob(files)
 }
