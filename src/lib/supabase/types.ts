@@ -1181,7 +1181,36 @@ export type Database = {
           telefone?: string | null
           vendedor?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'entregas_finalizadas_separacao_id_fkey'
+            columns: ['separacao_id']
+            isOneToOne: false
+            referencedRelation: 'separacoes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'entregas_finalizadas_separacao_id_fkey'
+            columns: ['separacao_id']
+            isOneToOne: false
+            referencedRelation: 'vw_separacoes_agenda'
+            referencedColumns: ['separacao_id']
+          },
+          {
+            foreignKeyName: 'entregas_finalizadas_separacao_id_fkey'
+            columns: ['separacao_id']
+            isOneToOne: false
+            referencedRelation: 'vw_vendas_loja'
+            referencedColumns: ['separacao_id']
+          },
+          {
+            foreignKeyName: 'entregas_finalizadas_separacao_id_fkey'
+            columns: ['separacao_id']
+            isOneToOne: false
+            referencedRelation: 'vw_vendas_por_projeto'
+            referencedColumns: ['separacao_id']
+          },
+        ]
       }
       equipes_projetos: {
         Row: {
@@ -1250,13 +1279,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: 'produtos'
             referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'estoque_itens_produto_id_fkey'
-            columns: ['produto_id']
-            isOneToOne: false
-            referencedRelation: 'vw_detalhe_produto_estoque'
-            referencedColumns: ['produto_id']
           },
           {
             foreignKeyName: 'estoque_itens_produto_id_fkey'
@@ -2422,9 +2444,12 @@ export type Database = {
           id: string
           item_pai_id: string | null
           orcamento_id: string
+          ordem: number | null
+          peca_nova: boolean | null
           preco_unitario: number | null
           produto_id: string | null
           quantidade: number | null
+          sub_ordem: number | null
         }
         Insert: {
           created_at?: string | null
@@ -2434,9 +2459,12 @@ export type Database = {
           id?: string
           item_pai_id?: string | null
           orcamento_id: string
+          ordem?: number | null
+          peca_nova?: boolean | null
           preco_unitario?: number | null
           produto_id?: string | null
           quantidade?: number | null
+          sub_ordem?: number | null
         }
         Update: {
           created_at?: string | null
@@ -2446,9 +2474,12 @@ export type Database = {
           id?: string
           item_pai_id?: string | null
           orcamento_id?: string
+          ordem?: number | null
+          peca_nova?: boolean | null
           preco_unitario?: number | null
           produto_id?: string | null
           quantidade?: number | null
+          sub_ordem?: number | null
         }
         Relationships: [
           {
@@ -2471,13 +2502,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: 'produtos'
             referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'orcamento_itens_produto_id_fkey'
-            columns: ['produto_id']
-            isOneToOne: false
-            referencedRelation: 'vw_detalhe_produto_estoque'
-            referencedColumns: ['produto_id']
           },
           {
             foreignKeyName: 'orcamento_itens_produto_id_fkey'
@@ -2511,6 +2535,7 @@ export type Database = {
       }
       orcamentos: {
         Row: {
+          aprovado_cliente_em: string | null
           arquiteto_id: string | null
           cliente_id: string | null
           condicoes_pagamento: string | null
@@ -2519,22 +2544,29 @@ export type Database = {
           data_emissao: string | null
           desconto_global: number | null
           empresa_id: string
+          enviado_cliente_em: string | null
+          enviado_cliente_por: string | null
           forma_pagamento: Database['public']['Enums']['pagamento_forma'] | null
           frete_tipo: string | null
           frete_valor: number | null
           id: string
           informacoes_cliente_id: string | null
+          motivo_recusa_cliente: string | null
           numero: string | null
           observacoes: string | null
           prazo_inicio_cobranca_dias: number | null
           prazo_pagamento_dias: number[] | null
           projeto_id: string | null
+          recusado_cliente_em: string | null
+          requer_revisao_financeira: boolean | null
           status: string | null
+          token_aprovacao_cliente: string | null
           validade: string | null
           valor_total: number | null
           vendedor_id: string | null
         }
         Insert: {
+          aprovado_cliente_em?: string | null
           arquiteto_id?: string | null
           cliente_id?: string | null
           condicoes_pagamento?: string | null
@@ -2543,22 +2575,29 @@ export type Database = {
           data_emissao?: string | null
           desconto_global?: number | null
           empresa_id: string
+          enviado_cliente_em?: string | null
+          enviado_cliente_por?: string | null
           forma_pagamento?: Database['public']['Enums']['pagamento_forma'] | null
           frete_tipo?: string | null
           frete_valor?: number | null
           id?: string
           informacoes_cliente_id?: string | null
+          motivo_recusa_cliente?: string | null
           numero?: string | null
           observacoes?: string | null
           prazo_inicio_cobranca_dias?: number | null
           prazo_pagamento_dias?: number[] | null
           projeto_id?: string | null
+          recusado_cliente_em?: string | null
+          requer_revisao_financeira?: boolean | null
           status?: string | null
+          token_aprovacao_cliente?: string | null
           validade?: string | null
           valor_total?: number | null
           vendedor_id?: string | null
         }
         Update: {
+          aprovado_cliente_em?: string | null
           arquiteto_id?: string | null
           cliente_id?: string | null
           condicoes_pagamento?: string | null
@@ -2567,17 +2606,23 @@ export type Database = {
           data_emissao?: string | null
           desconto_global?: number | null
           empresa_id?: string
+          enviado_cliente_em?: string | null
+          enviado_cliente_por?: string | null
           forma_pagamento?: Database['public']['Enums']['pagamento_forma'] | null
           frete_tipo?: string | null
           frete_valor?: number | null
           id?: string
           informacoes_cliente_id?: string | null
+          motivo_recusa_cliente?: string | null
           numero?: string | null
           observacoes?: string | null
           prazo_inicio_cobranca_dias?: number | null
           prazo_pagamento_dias?: number[] | null
           projeto_id?: string | null
+          recusado_cliente_em?: string | null
+          requer_revisao_financeira?: boolean | null
           status?: string | null
+          token_aprovacao_cliente?: string | null
           validade?: string | null
           valor_total?: number | null
           vendedor_id?: string | null
@@ -3201,13 +3246,6 @@ export type Database = {
             foreignKeyName: 'projeto_itens_produto_id_fkey'
             columns: ['produto_id']
             isOneToOne: false
-            referencedRelation: 'vw_detalhe_produto_estoque'
-            referencedColumns: ['produto_id']
-          },
-          {
-            foreignKeyName: 'projeto_itens_produto_id_fkey'
-            columns: ['produto_id']
-            isOneToOne: false
             referencedRelation: 'vw_estoque_liquido'
             referencedColumns: ['produto_id']
           },
@@ -3565,13 +3603,6 @@ export type Database = {
             foreignKeyName: 'projeto_produtos_produto_id_fkey'
             columns: ['produto_id']
             isOneToOne: false
-            referencedRelation: 'vw_detalhe_produto_estoque'
-            referencedColumns: ['produto_id']
-          },
-          {
-            foreignKeyName: 'projeto_produtos_produto_id_fkey'
-            columns: ['produto_id']
-            isOneToOne: false
             referencedRelation: 'vw_estoque_liquido'
             referencedColumns: ['produto_id']
           },
@@ -3819,6 +3850,7 @@ export type Database = {
           'Nome Arquiteto': string | null
           responsavel_id: string | null
           responsavel_nome: string | null
+          responsavel_obra_id: string | null
           status: Database['public']['Enums']['projeto_status'] | null
           updated_at: string
           valor_total: number
@@ -3846,6 +3878,7 @@ export type Database = {
           'Nome Arquiteto'?: string | null
           responsavel_id?: string | null
           responsavel_nome?: string | null
+          responsavel_obra_id?: string | null
           status?: Database['public']['Enums']['projeto_status'] | null
           updated_at?: string
           valor_total?: number
@@ -3873,6 +3906,7 @@ export type Database = {
           'Nome Arquiteto'?: string | null
           responsavel_id?: string | null
           responsavel_nome?: string | null
+          responsavel_obra_id?: string | null
           status?: Database['public']['Enums']['projeto_status'] | null
           updated_at?: string
           valor_total?: number
@@ -4014,6 +4048,20 @@ export type Database = {
           {
             foreignKeyName: 'projetos_responsavel_id_fkey'
             columns: ['responsavel_id']
+            isOneToOne: false
+            referencedRelation: 'vw_projetos_por_responsavel'
+            referencedColumns: ['usuario_id']
+          },
+          {
+            foreignKeyName: 'projetos_responsavel_obra_id_fkey'
+            columns: ['responsavel_obra_id']
+            isOneToOne: false
+            referencedRelation: 'usuarios'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'projetos_responsavel_obra_id_fkey'
+            columns: ['responsavel_obra_id']
             isOneToOne: false
             referencedRelation: 'vw_projetos_por_responsavel'
             referencedColumns: ['usuario_id']
@@ -4480,7 +4528,36 @@ export type Database = {
           tipo_arquivo?: string | null
           url_arquivo?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'separacao_arquivos_separacao_id_fkey'
+            columns: ['separacao_id']
+            isOneToOne: false
+            referencedRelation: 'separacoes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'separacao_arquivos_separacao_id_fkey'
+            columns: ['separacao_id']
+            isOneToOne: false
+            referencedRelation: 'vw_separacoes_agenda'
+            referencedColumns: ['separacao_id']
+          },
+          {
+            foreignKeyName: 'separacao_arquivos_separacao_id_fkey'
+            columns: ['separacao_id']
+            isOneToOne: false
+            referencedRelation: 'vw_vendas_loja'
+            referencedColumns: ['separacao_id']
+          },
+          {
+            foreignKeyName: 'separacao_arquivos_separacao_id_fkey'
+            columns: ['separacao_id']
+            isOneToOne: false
+            referencedRelation: 'vw_vendas_por_projeto'
+            referencedColumns: ['separacao_id']
+          },
+        ]
       }
       separacao_itens: {
         Row: {
@@ -4523,13 +4600,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: 'produtos'
             referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'separacao_itens_produto_id_fkey'
-            columns: ['produto_id']
-            isOneToOne: false
-            referencedRelation: 'vw_detalhe_produto_estoque'
-            referencedColumns: ['produto_id']
           },
           {
             foreignKeyName: 'separacao_itens_produto_id_fkey'
@@ -4945,13 +5015,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: 'produtos'
             referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'solicitacoes_compra_produto_id_fkey'
-            columns: ['produto_id']
-            isOneToOne: false
-            referencedRelation: 'vw_detalhe_produto_estoque'
-            referencedColumns: ['produto_id']
           },
           {
             foreignKeyName: 'solicitacoes_compra_produto_id_fkey'
@@ -5956,6 +6019,7 @@ export type Database = {
         Row: {
           ativo: boolean | null
           avatar_url: string | null
+          can_approve_quotes: boolean | null
           created_at: string | null
           email: string
           empresa_id: string | null
@@ -5969,6 +6033,7 @@ export type Database = {
         Insert: {
           ativo?: boolean | null
           avatar_url?: string | null
+          can_approve_quotes?: boolean | null
           created_at?: string | null
           email: string
           empresa_id?: string | null
@@ -5982,6 +6047,7 @@ export type Database = {
         Update: {
           ativo?: boolean | null
           avatar_url?: string | null
+          can_approve_quotes?: boolean | null
           created_at?: string | null
           email?: string
           empresa_id?: string | null
@@ -6394,28 +6460,48 @@ export type Database = {
       }
       vw_detalhe_produto_estoque: {
         Row: {
-          ativo: boolean | null
-          cest: string | null
-          codigo_produto: number | null
-          cst: string | null
-          ncm: string | null
-          nome: string | null
-          porc_bdi: number | null
-          porc_despesas: number | null
-          porc_frete: number | null
-          preco_custo: number | null
+          estoque_disponivel: number | null
+          estoque_reservado: number | null
+          estoque_total: number | null
           produto_id: string | null
-          qtd_atual: number | null
-          qtd_disponivel: number | null
-          qtd_reserva: number | null
-          referencia: string | null
-          setor: Database['public']['Enums']['estoque_local'] | null
-          sku: string | null
-          status_comercial: string | null
-          unidade: string | null
-          valor_venda: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'estoque_itens_produto_id_fkey'
+            columns: ['produto_id']
+            isOneToOne: false
+            referencedRelation: 'produtos'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'estoque_itens_produto_id_fkey'
+            columns: ['produto_id']
+            isOneToOne: false
+            referencedRelation: 'vw_estoque_liquido'
+            referencedColumns: ['produto_id']
+          },
+          {
+            foreignKeyName: 'estoque_itens_produto_id_fkey'
+            columns: ['produto_id']
+            isOneToOne: false
+            referencedRelation: 'vw_produtos_estoque_detalhado'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'estoque_itens_produto_id_fkey'
+            columns: ['produto_id']
+            isOneToOne: false
+            referencedRelation: 'vw_vendas_loja'
+            referencedColumns: ['produto_id']
+          },
+          {
+            foreignKeyName: 'estoque_itens_produto_id_fkey'
+            columns: ['produto_id']
+            isOneToOne: false
+            referencedRelation: 'vw_vendas_por_projeto'
+            referencedColumns: ['produto_id']
+          },
+        ]
       }
       vw_estoque_liquido: {
         Row: {
@@ -6587,59 +6673,17 @@ export type Database = {
       }
       vw_produtos_estoque_detalhado: {
         Row: {
-          ativo: boolean | null
-          categoria: string | null
-          categoria_id: string | null
-          codigo_legado: number | null
           codigo_produto: number | null
-          descricao_tecnica: string | null
-          estoque_disponivel_calc: number | null
-          estoque_reservado_calc: number | null
-          estoque_setores: Json | null
-          estoque_total_calc: number | null
-          fornecedor_principal_id: string | null
+          disponivel: number | null
+          estoque_geral: number | null
           id: string | null
-          marca_id: string | null
-          ncm: string | null
           nome: string | null
-          preco_custo: number | null
           preco_venda: number | null
-          referencia: string | null
+          reserva: number | null
+          separacao: number | null
           sku: string | null
-          tipo_fiscal: string | null
-          unidade: string | null
-          valor_venda: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: 'produtos_categoria_id_fkey'
-            columns: ['categoria_id']
-            isOneToOne: false
-            referencedRelation: 'categorias_produto'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'produtos_fornecedor_principal_id_fkey'
-            columns: ['fornecedor_principal_id']
-            isOneToOne: false
-            referencedRelation: 'contatos'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'produtos_fornecedor_principal_id_fkey'
-            columns: ['fornecedor_principal_id']
-            isOneToOne: false
-            referencedRelation: 'vw_transacoes_completas'
-            referencedColumns: ['contato_id']
-          },
-          {
-            foreignKeyName: 'produtos_marca_id_fkey'
-            columns: ['marca_id']
-            isOneToOne: false
-            referencedRelation: 'marcas'
-            referencedColumns: ['id']
-          },
-        ]
+        Relationships: []
       }
       vw_produtos_estoque_por_local: {
         Row: {
@@ -7258,6 +7302,10 @@ export type Database = {
         }
         Returns: number[]
       }
+      adm_aprovar_pelo_cliente: {
+        Args: { p_observacao?: string; p_orcamento_id: string }
+        Returns: Json
+      }
       admin_update_user_password: {
         Args: { p_new_password: string; p_user_id: string }
         Returns: undefined
@@ -7270,12 +7318,41 @@ export type Database = {
         Args: { p_ativo: boolean; p_user_id: string }
         Returns: undefined
       }
+      aprovar_orcamento_cliente: {
+        Args: { p_orcamento_id: string }
+        Returns: Json
+      }
+      aprovar_orcamento_cliente_manual: {
+        Args: { p_orcamento_id: string }
+        Returns: Json
+      }
+      aprovar_orcamento_cliente_publico: {
+        Args: { p_orcamento_id: string; p_token: string }
+        Returns: Json
+      }
       aprovar_orcamento_financeiro: {
         Args: { p_orcamento_id: string }
         Returns: Json
       }
       aprovar_orcamento_financeiro_base_spec001: {
         Args: { p_orcamento_id: string }
+        Returns: Json
+      }
+      aprovar_projeto_financeiro: {
+        Args: { p_project_id: string }
+        Returns: Json
+      }
+      can_user_approve_quotes: { Args: never; Returns: boolean }
+      cancelar_orcamento: {
+        Args: { p_motivo?: string; p_orcamento_id: string }
+        Returns: Json
+      }
+      cliente_aprovar_orcamento: {
+        Args: { p_orcamento_id: string; p_token: string }
+        Returns: Json
+      }
+      cliente_recusar_orcamento: {
+        Args: { p_motivo?: string; p_orcamento_id: string; p_token: string }
         Returns: Json
       }
       criar_usuario: {
@@ -7287,7 +7364,16 @@ export type Database = {
         }
         Returns: string
       }
+      enviar_orcamento_para_cliente: {
+        Args: { p_orcamento_id: string }
+        Returns: Json
+      }
+      finalizar_validacao_financeira: {
+        Args: { p_orcamentos: Json; p_project_data: Json; p_project_id: string }
+        Returns: Json
+      }
       fn_gerar_numero_orcamento: { Args: never; Returns: string }
+      gen_token_hex: { Args: never; Returns: string }
       generate_product_slug: {
         Args: { nome: string; preco: number }
         Returns: string
@@ -7317,6 +7403,7 @@ export type Database = {
           'Nome Arquiteto': string | null
           responsavel_id: string | null
           responsavel_nome: string | null
+          responsavel_obra_id: string | null
           status: Database['public']['Enums']['projeto_status'] | null
           updated_at: string
           valor_total: number
@@ -7348,6 +7435,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_ubiqua_admin: { Args: never; Returns: boolean }
       limpar_staging_processados: { Args: never; Returns: number }
+      replace_orcamento_itens: {
+        Args: { p_items: Json; p_orcamento_id: string }
+        Returns: number
+      }
       stats_datacenter: { Args: never; Returns: Json }
       unaccent: { Args: { '': string }; Returns: string }
       update_revenda_ubiqua_ordem: {
@@ -7400,6 +7491,8 @@ export type Database = {
         | 'Contrato de Projeto'
         | 'Ajustes Finais'
         | 'Emissão Projeto Executivo'
+        | 'Aprovação Financeira'
+        | 'Orçamento Aprovado'
       separacao_status:
         | 'Rascunho'
         | 'Pendente'
@@ -7587,6 +7680,8 @@ export const Constants = {
         'Contrato de Projeto',
         'Ajustes Finais',
         'Emissão Projeto Executivo',
+        'Aprovação Financeira',
+        'Orçamento Aprovado',
       ],
       separacao_status: [
         'Rascunho',
