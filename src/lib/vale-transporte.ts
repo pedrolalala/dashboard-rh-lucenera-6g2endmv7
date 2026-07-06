@@ -1,16 +1,19 @@
 import { createZipBlob } from './zip-utils'
+import { valorPorExtenso } from './currency-text'
 
 export interface EmpresaVT {
   id: string
   nome: string
   razao_social: string | null
   cnpj: string | null
+  cidade: string | null
 }
 
 export interface FuncionarioVT {
   id: string
   nome: string
   empresa_nome: string | null
+  empresa_id: string | null
   valor_vt_dia: number
 }
 
@@ -20,6 +23,7 @@ export interface CalculoVT {
   diasUteis: number
   diasFaltados: number
   feriadosCount: number
+  diasLiquidos: number
   valorDiario: number
   valorTotal: number
 }
@@ -31,6 +35,20 @@ export interface CalculoError {
 }
 
 const SP_HOLIDAYS: Array<{ month: number; day: number }> = [{ month: 6, day: 9 }]
+const MONTH_NAMES_PT = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+]
 
 function getHolidayKeys(year: number, month: number, feriados: any[]): Set<string> {
   const keys = new Set(
@@ -67,6 +85,30 @@ export function countFeriadosInMonth(year: number, month: number, feriados: any[
   return count
 }
 
+function findEmpresa(func: FuncionarioVT, empresas: EmpresaVT[]): EmpresaVT | null {
+  if (func.empresa_id) {
+    const byId = empresas.find((e) => e.id === func.empresa_id)
+    if (byId) return byId
+  }
+  if (!func.empresa_nome) return null
+  const target = func.empresa_nome.toLowerCase().trim()
+  const exact = empresas.find(
+    (e) =>
+      (e.nome && e.nome.toLowerCase().trim() === target) ||
+      (e.razao_social && e.razao_social.toLowerCase().trim() === target),
+  )
+  if (exact) return exact
+  const partial = empresas.find((e) => {
+    const nomeLower = e.nome?.toLowerCase().trim() || ''
+    const razaoLower = e.razao_social?.toLowerCase().trim() || ''
+    return (
+      (nomeLower && (nomeLower.includes(target) || target.includes(nomeLower))) ||
+      (razaoLower && (razaoLower.includes(target) || target.includes(razaoLower)))
+    )
+  })
+  return partial || null
+}
+
 export function buildCalculos(
   funcionarios: FuncionarioVT[],
   faltas: any[],
@@ -90,17 +132,16 @@ export function buildCalculos(
       })
       continue
     }
-    const empresa = func.empresa_nome
-      ? empresas.find((e) => e.nome === func.empresa_nome) || null
-      : null
+    const empresa = findEmpresa(func, empresas)
     const diasFaltados = faltasMap.get(func.id) || 0
-    const diasLiquidos = Math.max(0, diasUteis - feriadosCount - diasFaltados)
+    const diasLiquidos = Math.max(0, diasUteis - diasFaltados)
     calculos.push({
       funcionario: func,
       empresa,
       diasUteis,
       diasFaltados,
       feriadosCount,
+      diasLiquidos,
       valorDiario: func.valor_vt_dia,
       valorTotal: diasLiquidos * func.valor_vt_dia,
     })
@@ -116,14 +157,25 @@ function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
-function docxRow(label: string, value: string): string {
-  return `<w:tr><w:tc><w:tcPr><w:tcW w:w="3500" w:type="dxa"/></w:tcPr><w:p><w:r><w:t xml:space="preserve">${esc(label)}</w:t></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1500" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${esc(value)}</w:t></w:r></w:p></w:tc></w:tr>`
-}
-
-function createDocxBlob(c: CalculoVT, mesLabel: string): Blob {
+function createDocxBlob(c: CalculoVT, year: number, month: number): Blob {
   const enc = new TextEncoder()
   const emp = c.empresa
-  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">RECIBO DE VALE TRANSPORTE</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">Mês: ${esc(mesLabel)}</w:t></w:r></w:p><w:p/><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Empresa: </w:t></w:r><w:r><w:t xml:space="preserve">${esc(emp?.razao_social || emp?.nome || 'N/A')}</w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">CNPJ: </w:t></w:r><w:r><w:t xml:space="preserve">${esc(emp?.cnpj || 'N/A')}</w:t></w:r></w:p><w:p/><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">Funcionário: </w:t></w:r><w:r><w:t xml:space="preserve">${esc(c.funcionario.nome)}</w:t></w:r></w:p><w:p/><w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr><w:tblGrid><w:gridCol w:w="3500"/><w:gridCol w:w="1500"/></w:tblGrid>${docxRow('Dias Úteis', String(c.diasUteis))}${docxRow('Feriados', String(c.feriadosCount))}${docxRow('Faltas', String(c.diasFaltados))}${docxRow('Dias Líquidos', String(c.diasUteis - c.feriadosCount - c.diasFaltados))}${docxRow('Valor Diário', formatBRL(c.valorDiario))}${docxRow('Valor Total', formatBRL(c.valorTotal))}</w:tbl><w:p/><w:p/><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">_________________________________________</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${esc(c.funcionario.nome)}</w:t></w:r></w:p><w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`
+  const empName = emp?.razao_social || emp?.nome || 'N/A'
+  const empCidade = emp?.cidade || 'Ribeirão Preto'
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  const mm = String(month + 1).padStart(2, '0')
+  const dataInicio = `01/${mm}/${year}`
+  const dataFim = `${String(lastDay).padStart(2, '0')}/${mm}/${year}`
+  const now = new Date()
+  const diaHoje = now.getDate()
+  const mesHoje = MONTH_NAMES_PT[now.getMonth()]
+  const anoHoje = now.getFullYear()
+  const valorTotal = formatBRL(c.valorTotal)
+  const valorExtenso = valorPorExtenso(c.valorTotal)
+
+  const bodyText = `Declaro que recebi a quantia de ${valorTotal} (${valorExtenso}) passes de Vale Transporte de ${empName}, referente ao período de ${dataInicio} a ${dataFim}.`
+
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="480"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">RECIBO VALE TRANSPORTE</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="240" w:line="360" w:lineRule="auto"/></w:pPr><w:r><w:t xml:space="preserve">${esc(bodyText)}</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="240"/></w:pPr><w:r><w:t xml:space="preserve">Por ser verdade, firmo o presente.</w:t></w:r></w:p><w:p><w:pPr><w:spacing w:after="480"/></w:pPr><w:r><w:t xml:space="preserve">${esc(empCidade)}, ${diaHoje} de ${mesHoje} de ${anoHoje}</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="60"/></w:pPr><w:r><w:t xml:space="preserve">...............................................................</w:t></w:r></w:p><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:t xml:space="preserve">${esc(c.funcionario.nome)}</w:t></w:r></w:p><w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`
   const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`
   const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`
   const docRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`
@@ -135,12 +187,17 @@ function createDocxBlob(c: CalculoVT, mesLabel: string): Blob {
   ])
 }
 
-export async function gerarZipRecibos(calculos: CalculoVT[], mesLabel: string): Promise<Blob> {
+export async function gerarZipRecibos(
+  calculos: CalculoVT[],
+  mesLabel: string,
+  year: number,
+  month: number,
+): Promise<Blob> {
   const safeMesLabel = mesLabel.replace(/\//g, '-')
   const folder = `Vale transporte do mes ${safeMesLabel}`
   const files: Array<{ name: string; data: Uint8Array }> = []
   for (const c of calculos) {
-    const blob = createDocxBlob(c, mesLabel)
+    const blob = createDocxBlob(c, year, month)
     const data = new Uint8Array(await blob.arrayBuffer())
     const safeName = c.funcionario.nome.replace(/[^a-zA-Z0-9_\- ]/g, '').trim() || c.funcionario.id
     files.push({ name: `${folder}/${safeName}.docx`, data })

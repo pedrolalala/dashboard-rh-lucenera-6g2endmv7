@@ -6,12 +6,13 @@ export interface Empresa {
   razao_social: string | null
   cnpj: string | null
   codigo: number
+  cidade: string
 }
 
 export async function fetchEmpresas(): Promise<Empresa[]> {
   const { data, error } = await supabase
     .from('empresas')
-    .select('id, nome, razao_social, cnpj, codigo')
+    .select('id, nome, razao_social, cnpj, codigo, cidade')
     .order('nome', { ascending: true })
 
   if (error) throw error

@@ -68,10 +68,26 @@ export default function ValeTransporte() {
       : empresas.find((e) => e.id === empresa)?.nome || empresa
   const mesLabel = `${MONTHS.find((m) => m.value === mes)?.label || ''}/${ano}`
 
+  const validateConnection = async (): Promise<boolean> => {
+    const { error } = await supabase.from('empresas').select('id').limit(1)
+    if (error) {
+      toast({
+        title: 'Erro de conexão',
+        description: 'Não foi possível validar a conexão com o banco de dados.',
+        variant: 'destructive',
+      })
+      return false
+    }
+    return true
+  }
+
   const fetchCalculos = async (): Promise<{
     calculos: CalculoVT[]
     errors: CalculoError[]
   } | null> => {
+    const isConnected = await validateConnection()
+    if (!isConnected) return null
+
     const diasUteis = calcularDiasUteis(year, month, feriados)
     const feriadosCount = countFeriadosInMonth(year, month, feriados)
 
@@ -95,12 +111,38 @@ export default function ValeTransporte() {
       if (emp) filteredBenef = filteredBenef.filter((b: any) => b.empresa === emp.nome)
     }
 
+    const { data: funcEmpData } = await supabase
+      .from('funcionarios')
+      .select('id, nome, empresa_id, empresa')
+      .in(
+        'id',
+        funcsData.map((f) => f.id),
+      )
+    const funcEmpMap = new Map<string, { empresa_id: string | null; empresa: string | null }>()
+    for (const fe of funcEmpData || []) {
+      funcEmpMap.set(fe.id, { empresa_id: fe.empresa_id, empresa: fe.empresa })
+    }
+    if (funcEmpMap.size === 0 && funcsData.length > 0) {
+      const { data: funcEmpByNome } = await supabase
+        .from('funcionarios')
+        .select('id, nome, empresa_id, empresa')
+        .in(
+          'nome',
+          funcsData.map((f) => f.nome),
+        )
+      for (const fe of funcEmpByNome || []) {
+        funcEmpMap.set(fe.nome, { empresa_id: fe.empresa_id, empresa: fe.empresa })
+      }
+    }
+
     const funcionarios: any[] = funcsData.map((f) => {
       const benef = filteredBenef.find((b: any) => b.funcionario_id === f.id)
+      const funcEmp = funcEmpMap.get(f.id) || funcEmpMap.get(f.nome)
       return {
         id: f.id,
         nome: f.nome,
-        empresa_nome: benef?.empresa || null,
+        empresa_nome: benef?.empresa || funcEmp?.empresa || null,
+        empresa_id: funcEmp?.empresa_id || null,
         valor_vt_dia: Number(benef?.valor_vt_dia) || 0,
       }
     })
@@ -126,6 +168,7 @@ export default function ValeTransporte() {
       nome: e.nome,
       razao_social: e.razao_social,
       cnpj: e.cnpj,
+      cidade: e.cidade,
     }))
     return buildCalculos(funcionarios, faltasData, diasUteis, feriadosCount, empresasVT)
   }
@@ -168,7 +211,7 @@ export default function ValeTransporte() {
       }
       setCalculos(result.calculos)
       setErrors(result.errors)
-      const zipBlob = await gerarZipRecibos(result.calculos, mesLabel)
+      const zipBlob = await gerarZipRecibos(result.calculos, mesLabel, year, month)
       const url = URL.createObjectURL(zipBlob)
       const a = document.createElement('a')
       a.href = url
@@ -296,6 +339,7 @@ export default function ValeTransporte() {
                       <th className="px-4 py-3 font-medium">Funcionário</th>
                       <th className="px-4 py-3 font-medium text-right">Dias Úteis</th>
                       <th className="px-4 py-3 font-medium text-right">Faltas</th>
+                      <th className="px-4 py-3 font-medium text-right">Dias Líquidos</th>
                       <th className="px-4 py-3 font-medium text-right">Valor Diário</th>
                       <th className="px-4 py-3 font-medium text-right">Total</th>
                     </tr>
@@ -308,6 +352,7 @@ export default function ValeTransporte() {
                         <td className="px-4 py-3 text-right text-red-500 font-semibold">
                           {c.diasFaltados > 0 ? c.diasFaltados : '-'}
                         </td>
+                        <td className="px-4 py-3 text-right font-semibold">{c.diasLiquidos}</td>
                         <td className="px-4 py-3 text-right text-muted-foreground">
                           {formatBRL(c.valorDiario)}
                         </td>
