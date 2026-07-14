@@ -100,7 +100,7 @@ export default function ValeTransporte() {
 
     const { data: benefData } = await supabase
       .from('funcionarios_beneficios_empresas')
-      .select('funcionario_id, empresa, valor_vt_dia')
+      .select('funcionario_id, empresa, empresa_id, valor_vt_dia')
       .in(
         'funcionario_id',
         funcsData.map((f) => f.id),
@@ -108,7 +108,14 @@ export default function ValeTransporte() {
     let filteredBenef = benefData || []
     if (empresa !== ALL_COMPANIES) {
       const emp = empresas.find((e) => e.id === empresa)
-      if (emp) filteredBenef = filteredBenef.filter((b: any) => b.empresa === emp.nome)
+      if (emp) {
+        const nomeNorm = emp.nome.toLowerCase().trim()
+        filteredBenef = filteredBenef.filter(
+          (b: any) =>
+            b.empresa_id === empresa ||
+            (b.empresa ?? '').toLowerCase().trim() === nomeNorm,
+        )
+      }
     }
 
     const { data: funcEmpData } = await supabase
@@ -130,13 +137,24 @@ export default function ValeTransporte() {
         id: f.id,
         nome: f.nome,
         empresa_nome: benef?.empresa || funcEmp?.empresa || null,
-        empresa_id: funcEmp?.empresa_id || null,
+        empresa_id: benef?.empresa_id || funcEmp?.empresa_id || null,
         valor_vt_dia: Number(benef?.valor_vt_dia) || 0,
       }
     })
 
+    const empSelecionada = empresa !== ALL_COMPANIES ? empresas.find((e) => e.id === empresa) : null
+    const nomeEmpNorm = empSelecionada?.nome.toLowerCase().trim() ?? ''
+    const funcionariosFiltrados =
+      empresa === ALL_COMPANIES
+        ? funcionarios
+        : funcionarios.filter(
+            (f) =>
+              f.empresa_id === empresa ||
+              (f.empresa_nome ?? '').toLowerCase().trim() === nomeEmpNorm,
+          )
+
     let faltasData: any[] = []
-    if (funcionarios.length > 0) {
+    if (funcionariosFiltrados.length > 0) {
       const startDate = new Date(year, month, 1).toISOString().split('T')[0]
       const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0]
       const { data } = await supabase
@@ -144,7 +162,7 @@ export default function ValeTransporte() {
         .select('funcionario_id, data, status')
         .in(
           'funcionario_id',
-          funcionarios.map((f) => f.id),
+          funcionariosFiltrados.map((f) => f.id),
         )
         .gte('data', startDate)
         .lte('data', endDate)
@@ -158,7 +176,7 @@ export default function ValeTransporte() {
       cnpj: e.cnpj,
       cidade: e.cidade,
     }))
-    return buildCalculos(funcionarios, faltasData, diasUteis, feriadosCount, empresasVT)
+    return buildCalculos(funcionariosFiltrados, faltasData, diasUteis, feriadosCount, empresasVT)
   }
 
   const handleCalcular = async () => {
@@ -167,11 +185,21 @@ export default function ValeTransporte() {
       const result = await fetchCalculos()
       if (!result) {
         toast({
-          title: 'Nenhum funcionário encontrado',
-          description: 'Verifique funcionários ativos.',
+          title: 'Sem funcionários ativos',
+          description: 'Nenhum funcionário ativo encontrado no sistema.',
         })
         setCalculos([])
         setErrors([])
+        return
+      }
+      if (result.calculos.length === 0 && empresa !== ALL_COMPANIES) {
+        toast({
+          title: 'Nenhum funcionário com VT nessa empresa',
+          description: 'Verifique se os funcionários desta empresa têm VT cadastrado em benefícios.',
+          variant: 'destructive',
+        })
+        setCalculos([])
+        setErrors(result.errors)
         return
       }
       setCalculos(result.calculos)
@@ -193,8 +221,20 @@ export default function ValeTransporte() {
     setZipLoading(true)
     try {
       const result = await fetchCalculos()
-      if (!result || result.calculos.length === 0) {
-        toast({ title: 'Nenhum funcionário encontrado', variant: 'destructive' })
+      if (!result) {
+        toast({
+          title: 'Sem funcionários ativos',
+          description: 'Nenhum funcionário ativo encontrado no sistema.',
+          variant: 'destructive',
+        })
+        return
+      }
+      if (result.calculos.length === 0) {
+        toast({
+          title: 'Nenhum funcionário com VT nessa empresa',
+          description: 'Verifique se os funcionários desta empresa têm VT cadastrado em benefícios.',
+          variant: 'destructive',
+        })
         return
       }
       setCalculos(result.calculos)
