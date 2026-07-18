@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Download, User, Loader2, Trophy } from 'lucide-react'
+import { Download, User, Loader2, Trophy, AlertTriangle, Inbox } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -113,13 +113,21 @@ export default function Comissao() {
   const [ano, setAno] = useState(String(new Date().getFullYear()))
   const [data, setData] = useState<ComissaoData[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true)
-      const result = await fetchComissaoMensal(Number(mes), Number(ano))
-      setData(result)
-      setIsLoading(false)
+      setError(null)
+      try {
+        const result = await fetchComissaoMensal(Number(mes), Number(ano))
+        setData(result)
+      } catch (e: any) {
+        setData([])
+        setError(e?.message || 'Não foi possível carregar a comissão deste período.')
+      } finally {
+        setIsLoading(false)
+      }
     }
     loadData()
   }, [mes, ano])
@@ -184,6 +192,25 @@ export default function Comissao() {
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+      ) : error ? (
+        <Card className="border-destructive/30">
+          <CardContent className="p-10 flex flex-col items-center text-center gap-2">
+            <AlertTriangle className="w-8 h-8 text-destructive" />
+            <p className="font-medium text-foreground">Erro ao carregar comissão</p>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </CardContent>
+        </Card>
+      ) : data.length === 0 ? (
+        <Card className="border-border">
+          <CardContent className="p-10 flex flex-col items-center text-center gap-2">
+            <Inbox className="w-8 h-8 text-muted-foreground" />
+            <p className="font-medium text-foreground">Nenhuma comissão calculada neste período</p>
+            <p className="text-sm text-muted-foreground">
+              Não há projetos com valor e equipe vinculada em{' '}
+              {MONTHS.find((m) => m.value === mes)?.label} de {ano}.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

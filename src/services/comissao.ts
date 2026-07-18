@@ -10,52 +10,13 @@ export interface ComissaoData {
   comissao_calculada: number
 }
 
-const MOCK_DATA: ComissaoData[] = [
-  {
-    funcionario: 'Thais',
-    equipe: 'Thais',
-    comissao_percentual: 3,
-    mes: '2026-06-01',
-    total_projetos: 12,
-    valor_total_projetos: 240000,
-    comissao_calculada: 7200,
-  },
-  {
-    funcionario: 'Marina',
-    equipe: 'Marina',
-    comissao_percentual: 3,
-    mes: '2026-06-01',
-    total_projetos: 9,
-    valor_total_projetos: 180000,
-    comissao_calculada: 5400,
-  },
-  {
-    funcionario: 'Thairine',
-    equipe: 'Thairine',
-    comissao_percentual: 3,
-    mes: '2026-06-01',
-    total_projetos: 7,
-    valor_total_projetos: 140000,
-    comissao_calculada: 4200,
-  },
-]
-
 export async function fetchComissaoMensal(mes: number, ano: number): Promise<ComissaoData[]> {
-  try {
-    const startDate = `${ano}-${String(mes).padStart(2, '0')}-01`
-    const { data, error } = await supabase
-      .from('vw_comissao_mensal')
-      .select('*')
-      .eq('mes', startDate)
+  const startDate = `${ano}-${String(mes).padStart(2, '0')}-01`
+  const { data, error } = await supabase.from('vw_comissao_mensal').select('*').eq('mes', startDate)
 
-    if (error || !data || data.length === 0) {
-      return MOCK_DATA
-    }
+  if (error) throw error
 
-    return data as ComissaoData[]
-  } catch {
-    return MOCK_DATA
-  }
+  return (data as ComissaoData[]) ?? []
 }
 
 export function exportComissaoCSV(data: ComissaoData[], mes: number, ano: number): void {
