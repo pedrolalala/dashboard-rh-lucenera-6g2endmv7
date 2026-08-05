@@ -84,6 +84,20 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
   }
 
   const handleSave = async () => {
+    // SPEC-065: funcionarios_beneficios_empresas.empresa é NOT NULL sem
+    // default. Sem essa checagem, funcionários sem "Empresa" definida no
+    // cadastro principal falhavam ao salvar VT com um erro silencioso (não
+    // verificado abaixo) — o toast dizia "sucesso" mesmo o VT nunca sendo
+    // gravado.
+    if (!employee.empresa) {
+      toast({
+        title: 'Empresa não definida',
+        description:
+          'Defina a "Empresa" no cadastro principal do funcionário antes de salvar dados financeiros.',
+        variant: 'destructive',
+      })
+      return
+    }
     setSaving(true)
     try {
       const base = Number(salarioBase) || 0
@@ -106,11 +120,16 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
       }
 
       if (existingFin) {
-        await supabase.from('funcionarios_financeiro').update(finPayload).eq('id', existingFin.id)
+        const { error } = await supabase
+          .from('funcionarios_financeiro')
+          .update(finPayload)
+          .eq('id', existingFin.id)
+        if (error) throw error
       } else {
-        await supabase
+        const { error } = await supabase
           .from('funcionarios_financeiro')
           .insert({ ...finPayload, funcionario_id: employee.id })
+        if (error) throw error
       }
 
       const { data: existingBen } = await supabase
@@ -119,16 +138,21 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
         .eq('funcionario_id', employee.id)
         .maybeSingle()
 
-      const benPayload = { valor_vt_dia: vtDia }
+      // SPEC-065: `empresa` é NOT NULL — precisa ir no payload sempre
+      // (faltava antes, causando falha silenciosa no insert de quem ainda
+      // não tinha nenhuma linha nesta tabela).
+      const benPayload = { valor_vt_dia: vtDia, empresa: employee.empresa }
       if (existingBen) {
-        await supabase
+        const { error } = await supabase
           .from('funcionarios_beneficios_empresas')
           .update(benPayload)
           .eq('id', existingBen.id)
+        if (error) throw error
       } else {
-        await supabase
+        const { error } = await supabase
           .from('funcionarios_beneficios_empresas')
           .insert({ ...benPayload, funcionario_id: employee.id })
+        if (error) throw error
       }
 
       const descontos = base * 0.185

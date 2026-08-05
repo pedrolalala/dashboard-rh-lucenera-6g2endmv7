@@ -156,7 +156,9 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
           periodo_aquisitivo_id: periodoId || null,
           data_inicio: format(startDate, 'yyyy-MM-dd'),
           data_fim: format(endDate, 'yyyy-MM-dd'),
-          dias: calculatedDays,
+          // SPEC-065: `dias` é GENERATED ALWAYS (data_fim - data_inicio + 1)
+          // STORED no banco — gravar um valor aqui faz o Postgres rejeitar
+          // o update inteiro. Calculado automaticamente pelo banco.
         })
         .eq('id', requestToEdit.id)
 
@@ -172,7 +174,10 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
         periodo_aquisitivo_id: periodoId || null,
         data_inicio: format(startDate, 'yyyy-MM-dd'),
         data_fim: format(endDate, 'yyyy-MM-dd'),
-        dias: calculatedDays,
+        // SPEC-065: `dias` é GENERATED ALWAYS (data_fim - data_inicio + 1)
+        // STORED no banco — gravar um valor aqui faz o Postgres rejeitar o
+        // insert inteiro (causa raiz de "Nova Solicitação de Férias não
+        // cria"). Calculado automaticamente pelo banco.
         status: 'Pendente',
       })
 
