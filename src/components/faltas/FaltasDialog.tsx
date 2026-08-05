@@ -260,6 +260,12 @@ export function FaltasDialog({
                   </SelectItem>
                   <SelectItem value="licenca_militar">Licença Serviço Militar (30 dias)</SelectItem>
                 </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel className="pl-8 mt-2 text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                    Folgas / Compensações
+                  </SelectLabel>
+                  <SelectItem value="folga">Folga Compensatória</SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { CalendarIcon, AlertTriangle } from 'lucide-react'
+import { CalendarIcon, AlertTriangle, Check, ChevronsUpDown } from 'lucide-react'
 import { format } from 'date-fns'
 import {
   Dialog,
@@ -20,6 +20,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import { Calendar } from '@/components/ui/calendar'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
@@ -42,6 +50,7 @@ interface VacationFormProps {
 
 export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: VacationFormProps) {
   const [employeeId, setEmployeeId] = useState('')
+  const [employeeComboOpen, setEmployeeComboOpen] = useState(false)
   const [periodoId, setPeriodoId] = useState('')
   const [startDate, setStartDate] = useState<Date>()
   const [endDate, setEndDate] = useState<Date>()
@@ -139,21 +148,12 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!employeeId || !startDate || !endDate || calculatedDays <= 0) return
-    if (!periodoId) {
-      toast({
-        title: 'Período obrigatório',
-        description: 'Selecione um período aquisitivo para associar estas férias.',
-        variant: 'destructive',
-      })
-      return
-    }
-    if (isExceedingBalance) return
 
     if (requestToEdit) {
       const { error } = await supabase
         .from('ferias')
         .update({
-          periodo_aquisitivo_id: periodoId,
+          periodo_aquisitivo_id: periodoId || null,
           data_inicio: format(startDate, 'yyyy-MM-dd'),
           data_fim: format(endDate, 'yyyy-MM-dd'),
           dias: calculatedDays,
@@ -169,7 +169,7 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
     } else {
       const { error } = await supabase.from('ferias').insert({
         funcionario_id: employeeId,
-        periodo_aquisitivo_id: periodoId,
+        periodo_aquisitivo_id: periodoId || null,
         data_inicio: format(startDate, 'yyyy-MM-dd'),
         data_fim: format(endDate, 'yyyy-MM-dd'),
         dias: calculatedDays,
@@ -203,23 +203,52 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">
               Colaborador
             </Label>
-            <Select
-              value={employeeId}
-              onValueChange={setEmployeeId}
-              required
-              disabled={user?.app_role === 'funcionario' || !!requestToEdit}
-            >
-              <SelectTrigger className="w-full rounded-none border-border">
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent className="rounded-none border-border">
-                {employees.map((emp) => (
-                  <SelectItem key={emp.id} value={emp.id} className="rounded-none text-xs">
-                    {emp.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={employeeComboOpen} onOpenChange={setEmployeeComboOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={employeeComboOpen}
+                  disabled={user?.app_role === 'funcionario' || !!requestToEdit}
+                  className="w-full justify-between rounded-none border-border font-normal text-xs"
+                >
+                  {employeeId
+                    ? (employees.find((emp) => emp.id === employeeId)?.name ?? 'Selecione...')
+                    : 'Selecione...'}
+                  <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0 rounded-none border-border">
+                <Command>
+                  <CommandInput placeholder="Buscar colaborador..." className="text-xs" />
+                  <CommandList>
+                    <CommandEmpty>Nenhum colaborador encontrado.</CommandEmpty>
+                    <CommandGroup>
+                      {employees.map((emp) => (
+                        <CommandItem
+                          key={emp.id}
+                          value={emp.name}
+                          onSelect={() => {
+                            setEmployeeId(emp.id)
+                            setEmployeeComboOpen(false)
+                          }}
+                          className="rounded-none text-xs"
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-3.5 w-3.5',
+                              employeeId === emp.id ? 'opacity-100' : 'opacity-0',
+                            )}
+                          />
+                          {emp.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
@@ -349,8 +378,8 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             <Alert variant="destructive" className="rounded-none border-border mt-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-[10px] uppercase tracking-widest ml-2">
-                Não há períodos aquisitivos registrados para este colaborador. O agendamento é
-                bloqueado.
+                Nenhum período aquisitivo registrado — este lançamento não entra no cálculo de saldo
+                de férias.
               </AlertDescription>
             </Alert>
           )}
@@ -366,7 +395,7 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             </Button>
             <Button
               type="submit"
-              disabled={!employeeId || !periodoId || calculatedDays <= 0 || isExceedingBalance}
+              disabled={!employeeId || calculatedDays <= 0}
               className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-none text-xs uppercase tracking-widest"
             >
               {requestToEdit ? 'Salvar' : 'Solicitar'}

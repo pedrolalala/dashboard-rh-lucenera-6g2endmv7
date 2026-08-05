@@ -70,6 +70,10 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     label: 'Licença Militar',
     color: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
   },
+  folga: {
+    label: 'Folga',
+    color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
+  },
 }
 
 export function FaltasTabela({

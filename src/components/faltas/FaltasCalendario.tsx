@@ -19,6 +19,7 @@ const STATUS_MAP: Record<string, string> = {
   licenca_obito: 'Licença Óbito (Nojo)',
   licenca_casamento: 'Licença Casamento (Gala)',
   licenca_militar: 'Licença Serviço Militar',
+  folga: 'Folga Compensatória',
 }
 
 export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number }) {
