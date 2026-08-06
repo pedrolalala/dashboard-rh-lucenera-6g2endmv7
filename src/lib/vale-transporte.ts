@@ -34,7 +34,6 @@ export interface CalculoError {
   erro: string
 }
 
-const SP_HOLIDAYS: Array<{ month: number; day: number }> = [{ month: 6, day: 9 }]
 const MONTH_NAMES_PT = [
   'janeiro',
   'fevereiro',
@@ -50,14 +49,13 @@ const MONTH_NAMES_PT = [
   'dezembro',
 ]
 
-function getHolidayKeys(year: number, month: number, feriados: any[]): Set<string> {
+function getHolidayKeys(_year: number, _month: number, feriados: any[]): Set<string> {
   const keys = new Set(
     feriados.map((f: any) => {
       const d = new Date(f.date + 'T00:00:00')
       return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
     }),
   )
-  SP_HOLIDAYS.forEach((h) => keys.add(`${year}-${h.month}-${h.day}`))
   return keys
 }
 

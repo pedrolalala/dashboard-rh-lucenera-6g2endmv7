@@ -3,10 +3,21 @@ import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Calendar } from '@/components/ui/calendar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase/client'
-import { useFeriados } from '@/hooks/use-feriados'
-import { CalendarDays, Filter } from 'lucide-react'
+import { useFeriados, type Feriado } from '@/hooks/use-feriados'
+import { useAuth } from '@/hooks/use-auth'
+import { CalendarDays, Filter, Plus, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { FeriadoDialog } from './FeriadoDialog'
+
+const TIPO_LABELS: Record<string, string> = {
+  nacional: 'Feriado Nacional',
+  estadual: 'Feriado Estadual',
+  municipal: 'Feriado Municipal',
+  ponto_facultativo: 'Ponto Facultativo',
+  emenda: 'Emenda',
+}
 
 const STATUS_MAP: Record<string, string> = {
   ausente: 'Falta Integral',
@@ -23,9 +34,25 @@ const STATUS_MAP: Record<string, string> = {
 }
 
 export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number }) {
+  const { user } = useAuth()
+  const podeGerenciarFeriados = user?.app_role === 'admin' || user?.app_role === 'gerente'
+
   const [date, setDate] = useState<Date>(new Date())
-  const { feriados } = useFeriados(date.getFullYear())
+  const { feriados, refetch: refetchFeriados } = useFeriados(date.getFullYear())
   const [logs, setLogs] = useState<any[]>([])
+  const [feriadoDialogOpen, setFeriadoDialogOpen] = useState(false)
+  const [feriadoSelecionado, setFeriadoSelecionado] = useState<Feriado | null>(null)
+
+  const abrirNovoFeriado = () => {
+    setFeriadoSelecionado(null)
+    setFeriadoDialogOpen(true)
+  }
+
+  const abrirEditarFeriado = (f: Feriado) => {
+    if (f.origem !== 'manual') return
+    setFeriadoSelecionado(f)
+    setFeriadoDialogOpen(true)
+  }
 
   const [filters, setFilters] = useState({
     feriado: true,
@@ -109,10 +136,15 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
 
   return (
     <Card className="shadow-none border-border bg-background">
-      <CardHeader className="pb-4 border-b border-border bg-transparent">
+      <CardHeader className="pb-4 border-b border-border bg-transparent flex flex-row items-center justify-between gap-2 space-y-0">
         <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
           <CalendarDays className="h-4 w-4" /> Calendário de Registros e Feriados
         </CardTitle>
+        {podeGerenciarFeriados && (
+          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={abrirNovoFeriado}>
+            <Plus className="h-3.5 w-3.5" /> Feriado
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="p-6 flex flex-col gap-8">
         <div className="flex flex-col items-center gap-4">
@@ -208,25 +240,35 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
                 Listagem de Ocorrências
               </h4>
               <ul className="text-sm space-y-3">
-                {filteredFeriados.map((f) => (
-                  <li
-                    key={`feriado-${f.date}`}
-                    className="flex items-start gap-2 bg-blue-500/5 border border-blue-500/10 p-2 rounded-md"
-                  >
-                    <span className="mt-1 w-2 h-2 rounded-full shrink-0 bg-blue-500"></span>
-                    <span className="font-mono bg-blue-500/10 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-xs shrink-0">
-                      {format(parseISO(f.date), 'dd/MM')}
-                    </span>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-medium text-blue-700 dark:text-blue-400 leading-none">
-                        Feriado Nacional
+                {filteredFeriados.map((f) => {
+                  const editavel = podeGerenciarFeriados && f.origem === 'manual'
+                  return (
+                    <li
+                      key={`feriado-${f.date}-${f.name}`}
+                      className={cn(
+                        'flex items-start gap-2 bg-blue-500/5 border border-blue-500/10 p-2 rounded-md',
+                        editavel && 'cursor-pointer hover:bg-blue-500/10',
+                      )}
+                      onClick={() => editavel && abrirEditarFeriado(f)}
+                    >
+                      <span className="mt-1 w-2 h-2 rounded-full shrink-0 bg-blue-500"></span>
+                      <span className="font-mono bg-blue-500/10 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-xs shrink-0">
+                        {format(parseISO(f.date), 'dd/MM')}
                       </span>
-                      <span className="text-blue-600/80 dark:text-blue-300/80 text-[11px] leading-tight">
-                        {f.name}
-                      </span>
-                    </div>
-                  </li>
-                ))}
+                      <div className="flex flex-col gap-0.5 flex-1">
+                        <span className="font-medium text-blue-700 dark:text-blue-400 leading-none">
+                          {TIPO_LABELS[f.type] || 'Feriado Nacional'}
+                        </span>
+                        <span className="text-blue-600/80 dark:text-blue-300/80 text-[11px] leading-tight">
+                          {f.name}
+                        </span>
+                      </div>
+                      {editavel && (
+                        <Pencil className="h-3 w-3 text-blue-500/60 shrink-0 mt-1" />
+                      )}
+                    </li>
+                  )
+                })}
 
                 {filteredLogs.map((l) => {
                   const isFalta = ['ausente', 'falta_injustificada', 'meio_periodo'].includes(
@@ -282,6 +324,15 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
           </div>
         </div>
       </CardContent>
+
+      {podeGerenciarFeriados && (
+        <FeriadoDialog
+          open={feriadoDialogOpen}
+          onOpenChange={setFeriadoDialogOpen}
+          feriado={feriadoSelecionado}
+          onSuccess={refetchFeriados}
+        />
+      )}
     </Card>
   )
 }
