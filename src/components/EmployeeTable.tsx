@@ -95,7 +95,7 @@ export function EmployeeTable({ data, onEdit, onDelete }: EmployeeTableProps) {
           </TableRow>
         )}
         {data.map((emp) => (
-          <TableRow key={emp.id} className="group">
+          <TableRow key={emp.id} onDoubleClick={() => onEdit(emp)} className="group cursor-pointer">
             <TableCell className="font-medium">
               <div className="flex items-center gap-3">
                 <Avatar className="size-8 border border-border">
