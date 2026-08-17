@@ -46,7 +46,23 @@ export default function Cargos() {
     fetchCargos()
   }, [])
 
-  const filtered = cargos.filter((c) => c.titulo.toLowerCase().includes(search.toLowerCase()))
+  // SPEC-116: multi-termo em qualquer ordem, sem distinção de acento —
+  // cada palavra digitada precisa aparecer no título do cargo ou no
+  // departamento (não precisa ser o mesmo campo). Antes só casava o
+  // título com a frase inteira.
+  const normalize = (v: string) =>
+    v
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+  const searchTerms = normalize(search.trim())
+    .split(/\s+/)
+    .filter(Boolean)
+  const filtered = cargos.filter(
+    (c) =>
+      searchTerms.length === 0 ||
+      searchTerms.every((t) => normalize(`${c.titulo} ${c.departamento}`).includes(t)),
+  )
 
   const formatBRL = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)

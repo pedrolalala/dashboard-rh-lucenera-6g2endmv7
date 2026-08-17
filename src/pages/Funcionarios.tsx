@@ -111,7 +111,25 @@ export default function Funcionarios() {
   }
 
   const filteredEmployees = employees.filter((emp) => {
-    const matchesSearch = emp.nome.toLowerCase().includes(search.toLowerCase())
+    // SPEC-116: multi-termo em qualquer ordem, sem distinção de acento —
+    // cada palavra digitada precisa aparecer em algum campo (nome, cargo,
+    // e-mail, CPF ou empresa). Antes só casava nome com a frase inteira,
+    // sensível a acento.
+    const normalize = (v: string) =>
+      v
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+    const searchTerms = normalize(search.trim())
+      .split(/\s+/)
+      .filter(Boolean)
+    const matchesSearch =
+      searchTerms.length === 0 ||
+      searchTerms.every((t) =>
+        normalize(
+          [emp.nome, emp.cargo, emp.email, emp.cpf, emp.empresa].filter(Boolean).join(' '),
+        ).includes(t),
+      )
     const matchesEmpresa = empresaFilter === 'Todas' || emp.empresa === empresaFilter
     const matchesStatus =
       statusFilter === 'Todos' ||
@@ -181,7 +199,7 @@ export default function Funcionarios() {
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome..."
+                placeholder="Buscar por nome, cargo, e-mail, CPF..."
                 className="pl-9 bg-transparent"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}

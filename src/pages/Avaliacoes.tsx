@@ -53,8 +53,20 @@ export default function Avaliacoes() {
   }, [user])
 
   const filteredEvals = useMemo(() => {
+    // SPEC-116: multi-termo em qualquer ordem, sem distinção de acento no
+    // nome do funcionário (ex.: "silva joao" acha "João da Silva").
+    const normalize = (v: string) =>
+      v
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+    const searchTerms = normalize(search.trim())
+      .split(/\s+/)
+      .filter(Boolean)
     return evaluations.filter((e) => {
-      const matchName = e.funcionarios?.nome.toLowerCase().includes(search.toLowerCase())
+      const matchName =
+        searchTerms.length === 0 ||
+        searchTerms.every((t) => normalize(e.funcionarios?.nome || '').includes(t))
       const evalDate = new Date(e.data_avaliacao)
       const matchStart = dateFilterStart ? evalDate >= new Date(dateFilterStart) : true
       const matchEnd = dateFilterEnd ? evalDate <= new Date(dateFilterEnd) : true
