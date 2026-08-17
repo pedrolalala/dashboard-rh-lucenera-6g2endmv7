@@ -35,9 +35,6 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
   const [comissaoPercentual, setComissaoPercentual] = useState<string>(
     String(employee.comissao_percentual || 0),
   )
-  const [salarioLiquido, setSalarioLiquido] = useState<string>(
-    String(employee.salario_liquido || 0),
-  )
   const [valorVtDia, setValorVtDia] = useState<string>(String(employee.valor_vt_dia || 0))
   const [mes, setMes] = useState(String(new Date().getMonth() + 1))
   const [ano, setAno] = useState(String(new Date().getFullYear()))
@@ -76,7 +73,6 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
     if (data) {
       setFolhaId(data.id)
       setSalarioBase(String(data.salario_base || 0))
-      setSalarioLiquido(String(data.salario_liquido || 0))
     } else {
       setFolhaId(null)
     }
@@ -103,7 +99,6 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
       const base = Number(salarioBase) || 0
       const porFora = Number(salarioPorFora) || 0
       const perc = Number(comissaoPercentual) || 0
-      const liquido = Number(salarioLiquido) || 0
       const vtDia = Number(valorVtDia) || 0
 
       const { data: existingFin } = await supabase
@@ -112,11 +107,12 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
         .eq('funcionario_id', employee.id)
         .maybeSingle()
 
+      // funcionarios_financeiro.salario_liquido é GENERATED ALWAYS
+      // (salario_base + salario_por_fora) no banco — não pode ir no payload.
       const finPayload = {
         salario_base: base,
         salario_por_fora: porFora,
         comissao_percentual: perc,
-        salario_liquido: liquido,
       }
 
       if (existingFin) {
@@ -281,29 +277,15 @@ export function EmployeeFinance({ employee }: { employee: Employee }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="uppercase text-[10px] tracking-widest">
-                    Salário Líquido (R$)
-                  </Label>
-                  <Input
-                    type="number"
-                    value={salarioLiquido}
-                    onChange={(e) => setSalarioLiquido(e.target.value)}
-                    placeholder="0.00"
-                    className="font-medium"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="uppercase text-[10px] tracking-widest">VT Diário (R$)</Label>
-                  <Input
-                    type="number"
-                    value={valorVtDia}
-                    onChange={(e) => setValorVtDia(e.target.value)}
-                    placeholder="0.00"
-                    className="font-medium"
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <Label className="uppercase text-[10px] tracking-widest">VT Diário (R$)</Label>
+                <Input
+                  type="number"
+                  value={valorVtDia}
+                  onChange={(e) => setValorVtDia(e.target.value)}
+                  placeholder="0.00"
+                  className="font-medium"
+                />
               </div>
             </div>
 

@@ -18,6 +18,8 @@ export interface EmployeeComplete {
   salario_liquido: number
   empresa: string | null
   valor_vt_dia: number
+  // SPEC-064: rótulo Ribeirão/São Paulo, só visualização.
+  perfil: string | null
 }
 
 function normalizeEmployee(d: any): EmployeeComplete {
@@ -39,6 +41,7 @@ function normalizeEmployee(d: any): EmployeeComplete {
     salario_liquido: Number(d.salario_liquido) || 0,
     empresa: d.empresa || null,
     valor_vt_dia: Number(d.valor_vt_dia) || 0,
+    perfil: d.perfil || null,
   }
 }
 
@@ -82,6 +85,8 @@ export async function createEmployee(data: any): Promise<void> {
       cargo: data.cargo || null,
       data_admissao: data.data_admissao || null,
       ativo: data.ativo,
+      // SPEC-064: rótulo Ribeirão/São Paulo, só visualização.
+      perfil: data.perfil || null,
     })
     .select('id')
     .single()
@@ -98,11 +103,12 @@ export async function createEmployee(data: any): Promise<void> {
     email: data.email || null,
   })
 
+  // salario_liquido é GENERATED ALWAYS (salario_base + salario_por_fora) no banco —
+  // não pode ser enviado no payload de escrita, Postgres calcula sozinho.
   await upsertDetail('funcionarios_financeiro', id, {
     salario_base: Number(data.salario_base) || 0,
     salario_por_fora: Number(data.salario_por_fora) || 0,
     comissao_percentual: Number(data.comissao_percentual) || 0,
-    salario_liquido: Number(data.salario_liquido) || 0,
   })
 
   await upsertDetail('funcionarios_beneficios_empresas', id, {
@@ -119,6 +125,8 @@ export async function updateEmployee(id: string, data: any): Promise<void> {
       cargo: data.cargo || null,
       data_admissao: data.data_admissao || null,
       ativo: data.ativo,
+      // SPEC-064: rótulo Ribeirão/São Paulo, só visualização.
+      perfil: data.perfil || null,
     })
     .eq('id', id)
 
@@ -133,11 +141,12 @@ export async function updateEmployee(id: string, data: any): Promise<void> {
     email: data.email || null,
   })
 
+  // salario_liquido é GENERATED ALWAYS (salario_base + salario_por_fora) no banco —
+  // não pode ser enviado no payload de escrita, Postgres calcula sozinho.
   await upsertDetail('funcionarios_financeiro', id, {
     salario_base: Number(data.salario_base) || 0,
     salario_por_fora: Number(data.salario_por_fora) || 0,
     comissao_percentual: Number(data.comissao_percentual) || 0,
-    salario_liquido: Number(data.salario_liquido) || 0,
   })
 
   await upsertDetail('funcionarios_beneficios_empresas', id, {
