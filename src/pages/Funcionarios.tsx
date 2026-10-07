@@ -120,9 +120,7 @@ export default function Funcionarios() {
         .normalize('NFD')
         .replace(/\p{Diacritic}/gu, '')
         .toLowerCase()
-    const searchTerms = normalize(search.trim())
-      .split(/\s+/)
-      .filter(Boolean)
+    const searchTerms = normalize(search.trim()).split(/\s+/).filter(Boolean)
     const matchesSearch =
       searchTerms.length === 0 ||
       searchTerms.every((t) =>

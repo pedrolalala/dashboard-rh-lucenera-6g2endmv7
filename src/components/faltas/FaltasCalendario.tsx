@@ -141,7 +141,12 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
           <CalendarDays className="h-4 w-4" /> Calendário de Registros e Feriados
         </CardTitle>
         {podeGerenciarFeriados && (
-          <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={abrirNovoFeriado}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 gap-1 text-xs"
+            onClick={abrirNovoFeriado}
+          >
             <Plus className="h-3.5 w-3.5" /> Feriado
           </Button>
         )}
@@ -263,9 +268,7 @@ export function FaltasCalendario({ refreshTrigger }: { refreshTrigger: number })
                           {f.name}
                         </span>
                       </div>
-                      {editavel && (
-                        <Pencil className="h-3 w-3 text-blue-500/60 shrink-0 mt-1" />
-                      )}
+                      {editavel && <Pencil className="h-3 w-3 text-blue-500/60 shrink-0 mt-1" />}
                     </li>
                   )
                 })}

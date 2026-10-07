@@ -55,9 +55,7 @@ export default function Cargos() {
       .normalize('NFD')
       .replace(/\p{Diacritic}/gu, '')
       .toLowerCase()
-  const searchTerms = normalize(search.trim())
-    .split(/\s+/)
-    .filter(Boolean)
+  const searchTerms = normalize(search.trim()).split(/\s+/).filter(Boolean)
   const filtered = cargos.filter(
     (c) =>
       searchTerms.length === 0 ||

@@ -24,7 +24,7 @@ const Login = lazy(() => import('./pages/Login'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 const ProtectedRoute = () => {
-  const { user, loading } = useAuth()
+  const { user, hasAccess, loading } = useAuth()
 
   if (loading) {
     return (
@@ -36,6 +36,20 @@ const ProtectedRoute = () => {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  if (hasAccess === false) {
+    return (
+      <div className="h-screen flex items-center justify-center p-4">
+        <div className="max-w-sm w-full text-center space-y-3">
+          <h1 className="text-lg font-semibold">Acesso negado</h1>
+          <p className="text-sm text-muted-foreground">
+            Sua conta não tem permissão para acessar o RH. Fale com um administrador se acredita que
+            isso é um engano.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return <Outlet />

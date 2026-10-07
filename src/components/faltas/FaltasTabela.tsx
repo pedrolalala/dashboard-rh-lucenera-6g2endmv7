@@ -262,11 +262,7 @@ export function FaltasTabela({
                     color: 'bg-transparent text-muted-foreground border-border',
                   }
                   return (
-                    <TableRow
-                      key={log.id}
-                      onDoubleClick={canManage ? () => handleEdit(log) : undefined}
-                      className={canManage ? 'cursor-pointer' : undefined}
-                    >
+                    <TableRow key={log.id}>
                       <TableCell className="font-medium text-sm">
                         {log.funcionarios?.nome || 'Desconhecido'}
                         <div className="text-[10px] text-muted-foreground font-normal uppercase tracking-widest mt-1">

@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import { TopHeader } from '@/components/TopHeader'
+import { SystemSwitcher } from '@/components/SystemSwitcher'
 
 export default function Layout() {
   return (
@@ -15,6 +16,7 @@ export default function Layout() {
           </div>
         </main>
       </SidebarInset>
+      <SystemSwitcher currentSlug="rh" />
     </SidebarProvider>
   )
 }

@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase/client'
+import { consumeCodeFromUrl } from '@/lib/cross-system-auth'
+import { getUsuarioRoleCached } from '@/lib/usuario-role-cache'
 
 export interface AuthUser extends User {
   app_role?: string
@@ -10,6 +12,7 @@ export interface AuthUser extends User {
 interface AuthContextType {
   user: AuthUser | null
   session: Session | null
+  hasAccess: boolean | null
   signIn: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => Promise<{ error: any }>
   resetPassword: (email: string) => Promise<{ error: any }>
@@ -27,12 +30,35 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // SPEC-069: este app só checava estar logado, sem nenhuma permissão
+  // granular do Hub. Consulta a mesma RPC que o Hub usa (hub_pode_executar,
+  // SPEC-006) para o sistema inteiro ('rh', sem módulo/ação específicos).
   useEffect(() => {
+    if (!user?.id) {
+      setHasAccess(null)
+      return
+    }
+    supabase
+      .rpc('hub_pode_executar', {
+        p_usuario_id: user.id,
+        p_system_slug: 'rh',
+        p_modulo_chave: null,
+        p_acao: null,
+      })
+      .then(({ data }) => setHasAccess(Boolean(data)))
+  }, [user?.id])
+
+  useEffect(() => {
+    let mounted = true
+    let initialized = false
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted || !initialized) return
       setSession(session)
       if (!session?.user) {
         setUser(null)
@@ -46,16 +72,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         )
       }
     })
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      if (!session?.user) {
-        setUser(null)
-        setLoading(false)
-      } else {
-        setUser(session.user)
-      }
-    })
-    return () => subscription.unsubscribe()
+
+    // SPEC-120: acesso vindo do menu lateral / Central chega com ?sso_code
+    // na URL. Mesma guarda de corrida já usada em cadastro-lucenera/use-auth.tsx
+    // — sem o `initialized`, o evento inicial de onAuthStateChange (sessão
+    // nula, antes da troca do código terminar) resolveria "sem sessão" cedo
+    // demais numa aba nova vinda de SSO.
+    consumeCodeFromUrl('rh')
+      .catch(() => {})
+      .finally(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!mounted) return
+          initialized = true
+          setSession(session)
+          if (!session?.user) {
+            setUser(null)
+            setLoading(false)
+          } else {
+            setUser(session.user)
+          }
+        })
+      })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {
@@ -63,19 +105,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let isMounted = true
 
       const loadData = async () => {
-        const [roleRes, funcRes] = await Promise.all([
-          supabase.from('usuarios').select('role').eq('id', user.id).single(),
-          supabase.from('funcionarios_rh').select('id').eq('user_id', user.id).maybeSingle(),
+        // SPEC-123: cache compartilhado com useSistemasPermitidos.ts —
+        // evita duplicar esta mesma query de rede a cada carregamento.
+        const [role, funcRes] = await Promise.all([
+          getUsuarioRoleCached(user.id),
+          supabase.from('funcionarios').select('id').eq('usuario_id', user.id).maybeSingle(),
         ])
 
         let funcId = funcRes.data?.id
 
         // Self-healing mechanism: Se o vínculo falhou por algum motivo (delay de trigger ou legado),
-        // força a vinculação do funcionário via Edge RPC para garantir o acesso ao sistema de ponto
+        // força a vinculação do funcionário via RPC para garantir o acesso ao sistema de ponto
         if (!funcId) {
-          const { data: newFuncId } = await supabase.rpc('link_my_funcionario_record' as any)
-          if (newFuncId) {
-            funcId = newFuncId
+          await supabase.rpc('link_my_funcionario_record')
+          const { data: linkedFunc } = await supabase
+            .from('funcionarios')
+            .select('id')
+            .eq('usuario_id', user.id)
+            .maybeSingle()
+          if (linkedFunc?.id) {
+            funcId = linkedFunc.id
           }
         }
 
@@ -84,7 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             prev
               ? {
                   ...prev,
-                  app_role: roleRes.data?.role || 'funcionario',
+                  app_role: role || 'funcionario',
                   funcionario_id: funcId,
                 }
               : null,
@@ -118,7 +167,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, signIn, signOut, resetPassword, loading }}>
+    <AuthContext.Provider
+      value={{ user, session, hasAccess, signIn, signOut, resetPassword, loading }}
+    >
       {children}
     </AuthContext.Provider>
   )

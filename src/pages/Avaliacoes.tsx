@@ -60,9 +60,7 @@ export default function Avaliacoes() {
         .normalize('NFD')
         .replace(/\p{Diacritic}/gu, '')
         .toLowerCase()
-    const searchTerms = normalize(search.trim())
-      .split(/\s+/)
-      .filter(Boolean)
+    const searchTerms = normalize(search.trim()).split(/\s+/).filter(Boolean)
     return evaluations.filter((e) => {
       const matchName =
         searchTerms.length === 0 ||

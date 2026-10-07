@@ -112,8 +112,7 @@ export default function ValeTransporte() {
         const nomeNorm = emp.nome.toLowerCase().trim()
         filteredBenef = filteredBenef.filter(
           (b: any) =>
-            b.empresa_id === empresa ||
-            (b.empresa ?? '').toLowerCase().trim() === nomeNorm,
+            b.empresa_id === empresa || (b.empresa ?? '').toLowerCase().trim() === nomeNorm,
         )
       }
     }
@@ -195,7 +194,8 @@ export default function ValeTransporte() {
       if (result.calculos.length === 0 && empresa !== ALL_COMPANIES) {
         toast({
           title: 'Nenhum funcionário com VT nessa empresa',
-          description: 'Verifique se os funcionários desta empresa têm VT cadastrado em benefícios.',
+          description:
+            'Verifique se os funcionários desta empresa têm VT cadastrado em benefícios.',
           variant: 'destructive',
         })
         setCalculos([])
@@ -232,7 +232,8 @@ export default function ValeTransporte() {
       if (result.calculos.length === 0) {
         toast({
           title: 'Nenhum funcionário com VT nessa empresa',
-          description: 'Verifique se os funcionários desta empresa têm VT cadastrado em benefícios.',
+          description:
+            'Verifique se os funcionários desta empresa têm VT cadastrado em benefícios.',
           variant: 'destructive',
         })
         return

@@ -39,6 +39,7 @@ const schema = z.object({
   salario_liquido: z.coerce.number().optional(),
   empresa: z.string().optional(),
   valor_vt_dia: z.coerce.number().optional(),
+  perfil: z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -96,6 +97,7 @@ export function EmployeeForm({ employee, onSubmit, onCancel }: EmployeeFormProps
           salario_liquido: employee.salario_liquido || 0,
           empresa: employee.empresa || '',
           valor_vt_dia: employee.valor_vt_dia || 0,
+          perfil: employee.perfil || '',
         }
       : {
           nome: '',
@@ -114,6 +116,7 @@ export function EmployeeForm({ employee, onSubmit, onCancel }: EmployeeFormProps
           salario_liquido: 0,
           empresa: '',
           valor_vt_dia: 0,
+          perfil: '',
         },
   })
 
@@ -205,6 +208,27 @@ export function EmployeeForm({ employee, onSubmit, onCancel }: EmployeeFormProps
                     <SelectItem value="islight">Islight</SelectItem>
                     <SelectItem value="Manoela">Manoela</SelectItem>
                     <SelectItem value="Foco">Foco</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="perfil"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="uppercase text-[10px] tracking-widest">Perfil</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="ribeirao">Ribeirão</SelectItem>
+                    <SelectItem value="sao_paulo">São Paulo</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

@@ -54,8 +54,7 @@ export function VacationTable({ data, onUpdateStatus, onEdit, onDelete }: Vacati
             data.map((req) => (
               <TableRow
                 key={req.id}
-                onDoubleClick={() => onEdit(req)}
-                className="group hover:bg-muted/30 transition-colors border-b border-border cursor-pointer"
+                className="group hover:bg-muted/30 transition-colors border-b border-border"
               >
                 <TableCell>
                   <div className="font-medium text-xs text-foreground uppercase tracking-wide">

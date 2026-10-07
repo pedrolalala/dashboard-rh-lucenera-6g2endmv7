@@ -12,7 +12,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
@@ -101,7 +107,10 @@ export function FeriadoDialog({
     if (!feriado?.id) return
     setLoading(true)
     try {
-      const { error } = await supabase.from('feriados').update({ ativo: false }).eq('id', feriado.id)
+      const { error } = await supabase
+        .from('feriados')
+        .update({ ativo: false })
+        .eq('id', feriado.id)
       if (error) throw error
       toast({ title: 'Feriado removido' })
       onSuccess()
@@ -182,7 +191,11 @@ export function FeriadoDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={loading} className="bg-primary hover:bg-primary/90">
+            <Button
+              onClick={handleSave}
+              disabled={loading}
+              className="bg-primary hover:bg-primary/90"
+            >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar
             </Button>
