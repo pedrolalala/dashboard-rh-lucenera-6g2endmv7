@@ -78,14 +78,6 @@ export default function Ferias() {
     })
   }, [requests, deptFilter, statusFilter])
 
-  const handleUpdateStatus = async (id: string, status: VacationRequest['status']) => {
-    const { error } = await supabase.from('ferias').update({ status }).eq('id', id)
-    if (!error) {
-      toast({ title: `Solicitação marcada como ${status}` })
-      fetchRequests()
-    }
-  }
-
   const handleEdit = (req: VacationRequest) => {
     setRequestToEdit(req)
     setIsFormOpen(true)
@@ -207,7 +199,6 @@ export default function Ferias() {
               <CardContent className="p-0 flex-1">
                 <VacationTable
                   data={filteredRequests}
-                  onUpdateStatus={handleUpdateStatus}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />

@@ -178,7 +178,9 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
         // STORED no banco — gravar um valor aqui faz o Postgres rejeitar o
         // insert inteiro (causa raiz de "Nova Solicitação de Férias não
         // cria"). Calculado automaticamente pelo banco.
-        status: 'Pendente',
+        // SPEC-185: sem etapa de aprovação — quem registra (Lana) já recebeu o pedido
+        // por e-mail/conversa, então a solicitação nasce aprovada.
+        status: 'Aprovado',
       })
 
       if (!error) {

@@ -15,12 +15,11 @@ import { useAuth } from '@/hooks/use-auth'
 
 interface VacationTableProps {
   data: VacationRequest[]
-  onUpdateStatus: (id: string, status: VacationRequest['status']) => void
   onEdit: (req: VacationRequest) => void
   onDelete: (id: string) => void
 }
 
-export function VacationTable({ data, onUpdateStatus, onEdit, onDelete }: VacationTableProps) {
+export function VacationTable({ data, onEdit, onDelete }: VacationTableProps) {
   const { user } = useAuth()
   const canUpdate = user?.app_role === 'admin' || user?.app_role === 'gerente'
 
@@ -91,40 +90,7 @@ export function VacationTable({ data, onUpdateStatus, onEdit, onDelete }: Vacati
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {req.status === 'Pendente' && canUpdate && (
-                      <>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7 text-foreground hover:bg-primary hover:text-primary-foreground border-border rounded-none"
-                              onClick={() => onUpdateStatus(req.id, 'Aprovado')}
-                            >
-                              <Check className="size-3" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent className="rounded-none border-border text-[10px] uppercase tracking-widest">
-                            Aprovar
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:bg-destructive hover:text-destructive-foreground hover:border-destructive border-border rounded-none"
-                              onClick={() => onUpdateStatus(req.id, 'Rejeitado')}
-                            >
-                              <X className="size-3" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent className="rounded-none border-border text-[10px] uppercase tracking-widest">
-                            Rejeitar
-                          </TooltipContent>
-                        </Tooltip>
-                      </>
-                    )}
+                    {/* SPEC-185: sem botões Aprovar/Rejeitar — a solicitação já nasce aprovada. */}
                     {(canUpdate || req.status === 'Pendente') && (
                       <>
                         <Tooltip>
