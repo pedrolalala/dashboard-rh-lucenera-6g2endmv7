@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { supabase } from '@/lib/supabase/client'
 
 // Tela branca na Lana (08/10/2026): as páginas carregam em pedaços (lazy); quando o sistema é
 // publicado de novo com a aba aberta, os pedaços antigos deixam de existir e o import falha —
@@ -38,6 +39,21 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
 
   componentDidCatch(erro: unknown, info: ErrorInfo) {
     console.error('[RH] erro na tela', erro, info.componentStack)
+    // Registro para investigar depois (tabela erros_tela; só admin lê). Nunca quebra a tela.
+    const e = erro instanceof Error ? erro : new Error(String(erro))
+    supabase
+      .from('erros_tela')
+      .insert({
+        sistema: 'rh',
+        mensagem: `${e.name}: ${e.message}`.slice(0, 1000),
+        detalhe: `${e.stack ?? ''}\n--- componentes ---${info.componentStack ?? ''}`.slice(0, 8000),
+        url: window.location.href,
+        navegador: navigator.userAgent,
+      })
+      .then(
+        () => undefined,
+        () => undefined,
+      )
     if (ehErroDeCarregamento(erro)) recarregarUmaVez()
   }
 
@@ -57,6 +73,10 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           >
             Recarregar
           </button>
+          <p className="text-[10px] text-muted-foreground break-all pt-2">
+            Detalhe:{' '}
+            {this.state.erro instanceof Error ? this.state.erro.message : String(this.state.erro)}
+          </p>
         </div>
       </div>
     )
