@@ -117,15 +117,19 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
           setGlobalBalance(data || { saldo_disponivel: 0 })
         })
 
+      // SPEC-188: períodos com saldo (planilha de controle); sugere o mais antigo que ainda
+      // tem saldo — é o que se desconta primeiro.
       supabase
-        .from('periodos_aquisitivos')
+        .from('vw_ferias_periodos')
         .select('*')
         .eq('funcionario_id', employeeId)
         .order('data_inicio', { ascending: true })
         .then(({ data }) => {
-          setPeriodosAquisitivos(data || [])
-          if (data && data.length > 0 && !requestToEdit) {
-            setPeriodoId(data[0].id)
+          const lista = (data || []).map((p: any) => ({ ...p, id: p.periodo_id }))
+          setPeriodosAquisitivos(lista)
+          if (lista.length > 0 && !requestToEdit) {
+            const comSaldo = lista.find((p: any) => p.saldo > 0)
+            setPeriodoId((comSaldo ?? lista[lista.length - 1]).id)
           }
         })
     }
@@ -279,8 +283,11 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
               <SelectContent className="rounded-none border-border">
                 {periodosAquisitivos.map((b) => (
                   <SelectItem key={b.id} value={b.id} className="rounded-none text-xs">
-                    {b.data_inicio ? format(new Date(b.data_inicio), 'dd/MM/yyyy') : ''} a{' '}
-                    {b.data_fim ? format(new Date(b.data_fim), 'dd/MM/yyyy') : ''}
+                    {b.data_inicio
+                      ? format(new Date(`${b.data_inicio}T12:00:00`), 'dd/MM/yyyy')
+                      : ''}{' '}
+                    a {b.data_fim ? format(new Date(`${b.data_fim}T12:00:00`), 'dd/MM/yyyy') : ''}
+                    {typeof b.saldo === 'number' && ` · saldo ${b.saldo} dias`}
                   </SelectItem>
                 ))}
               </SelectContent>
