@@ -111,10 +111,14 @@ export async function createEmployee(data: any): Promise<void> {
     comissao_percentual: Number(data.comissao_percentual) || 0,
   })
 
-  await upsertDetail('funcionarios_beneficios_empresas', id, {
-    empresa: data.empresa || null,
-    valor_vt_dia: Number(data.valor_vt_dia) || 0,
-  })
+  // funcionarios_beneficios_empresas.empresa é NOT NULL: sem empresa escolhida não há
+  // linha de benefício pra gravar (antes mandava null e o salvar inteiro dava erro).
+  if (data.empresa) {
+    await upsertDetail('funcionarios_beneficios_empresas', id, {
+      empresa: data.empresa,
+      valor_vt_dia: Number(data.valor_vt_dia) || 0,
+    })
+  }
 }
 
 export async function updateEmployee(id: string, data: any): Promise<void> {
@@ -149,10 +153,14 @@ export async function updateEmployee(id: string, data: any): Promise<void> {
     comissao_percentual: Number(data.comissao_percentual) || 0,
   })
 
-  await upsertDetail('funcionarios_beneficios_empresas', id, {
-    empresa: data.empresa || null,
-    valor_vt_dia: Number(data.valor_vt_dia) || 0,
-  })
+  // Mesmo motivo do createEmployee: sem empresa não grava benefício (desativar um
+  // funcionário sem empresa definida falhava aqui, depois de já ter salvo o resto).
+  if (data.empresa) {
+    await upsertDetail('funcionarios_beneficios_empresas', id, {
+      empresa: data.empresa,
+      valor_vt_dia: Number(data.valor_vt_dia) || 0,
+    })
+  }
 }
 
 export async function deleteEmployee(id: string): Promise<void> {
