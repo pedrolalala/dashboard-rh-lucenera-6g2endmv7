@@ -7,6 +7,7 @@ import Layout from './components/Layout'
 import { AuthProvider, useAuth } from './hooks/use-auth'
 import { ThemeProvider } from './components/theme-provider'
 import { Loader2 } from 'lucide-react'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 // Implement code splitting for routes to prevent out-of-memory errors during build
 const Index = lazy(() => import('./pages/Index'))
@@ -89,30 +90,32 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route element={<ProtectedRoute />}>
-                <Route element={<Layout />}>
-                  <Route path="/" element={<IndexRoute />} />
-                  <Route path="/funcionarios" element={<Funcionarios />} />
-                  <Route path="/ferias" element={<Ferias />} />
-                  <Route path="/faltas" element={<Faltas />} />
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<Layout />}>
+                    <Route path="/" element={<IndexRoute />} />
+                    <Route path="/funcionarios" element={<Funcionarios />} />
+                    <Route path="/ferias" element={<Ferias />} />
+                    <Route path="/faltas" element={<Faltas />} />
 
-                  <Route element={<AdminGerenteRoute />}>
-                    <Route path="/vale-transporte" element={<ValeTransporte />} />
-                    <Route path="/comissao" element={<Comissao />} />
-                    <Route path="/folha-pagamento" element={<FolhaPagamento />} />
-                    <Route path="/avaliacoes" element={<Avaliacoes />} />
-                    <Route path="/relatorios" element={<Relatorios />} />
-                    <Route path="/cargos" element={<Cargos />} />
-                    <Route path="/configuracoes" element={<Configuracoes />} />
+                    <Route element={<AdminGerenteRoute />}>
+                      <Route path="/vale-transporte" element={<ValeTransporte />} />
+                      <Route path="/comissao" element={<Comissao />} />
+                      <Route path="/folha-pagamento" element={<FolhaPagamento />} />
+                      <Route path="/avaliacoes" element={<Avaliacoes />} />
+                      <Route path="/relatorios" element={<Relatorios />} />
+                      <Route path="/cargos" element={<Cargos />} />
+                      <Route path="/configuracoes" element={<Configuracoes />} />
+                    </Route>
                   </Route>
                 </Route>
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </TooltipProvider>
       </BrowserRouter>
     </AuthProvider>
