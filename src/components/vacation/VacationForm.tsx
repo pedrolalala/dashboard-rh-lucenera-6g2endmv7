@@ -12,13 +12,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Command,
@@ -51,13 +44,11 @@ interface VacationFormProps {
 export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: VacationFormProps) {
   const [employeeId, setEmployeeId] = useState('')
   const [employeeComboOpen, setEmployeeComboOpen] = useState(false)
-  const [periodoId, setPeriodoId] = useState('')
   const [startDate, setStartDate] = useState<Date>()
   const [endDate, setEndDate] = useState<Date>()
   const [employees, setEmployees] = useState<EmployeeOption[]>([])
 
   const [globalBalance, setGlobalBalance] = useState<any>(null)
-  const [periodosAquisitivos, setPeriodosAquisitivos] = useState<any[]>([])
 
   const { user } = useAuth()
   const { toast } = useToast()
@@ -85,9 +76,6 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             setEmployeeId(requestToEdit.employeeId)
             setStartDate(requestToEdit.startDate)
             setEndDate(requestToEdit.endDate)
-            if (requestToEdit.periodoId) {
-              setPeriodoId(requestToEdit.periodoId)
-            }
           } else if (user?.app_role === 'funcionario' && user.funcionario_id) {
             setEmployeeId(user.funcionario_id)
           }
@@ -97,12 +85,10 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
     } else {
       if (user?.app_role !== 'funcionario') {
         setEmployeeId('')
-        setPeriodoId('')
       }
       setStartDate(undefined)
       setEndDate(undefined)
       setGlobalBalance(null)
-      setPeriodosAquisitivos([])
     }
   }, [open, user, requestToEdit])
 
@@ -117,21 +103,8 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
           setGlobalBalance(data || { saldo_disponivel: 0 })
         })
 
-      // SPEC-188: períodos com saldo (planilha de controle); sugere o mais antigo que ainda
-      // tem saldo — é o que se desconta primeiro.
-      supabase
-        .from('vw_ferias_periodos')
-        .select('*')
-        .eq('funcionario_id', employeeId)
-        .order('data_inicio', { ascending: true })
-        .then(({ data }) => {
-          const lista = (data || []).map((p: any) => ({ ...p, id: p.periodo_id }))
-          setPeriodosAquisitivos(lista)
-          if (lista.length > 0 && !requestToEdit) {
-            const comSaldo = lista.find((p: any) => p.saldo > 0)
-            setPeriodoId((comSaldo ?? lista[lista.length - 1]).id)
-          }
-        })
+      // SPEC-188: sem campo de período — o banco (trg_ferias_definir_periodo) liga a férias ao
+      // período do próprio funcionário mais antigo que ainda tem saldo.
     }
   }, [employeeId, open, requestToEdit])
 
@@ -157,7 +130,6 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
       const { error } = await supabase
         .from('ferias')
         .update({
-          periodo_aquisitivo_id: periodoId || null,
           data_inicio: format(startDate, 'yyyy-MM-dd'),
           data_fim: format(endDate, 'yyyy-MM-dd'),
           // SPEC-065: `dias` é GENERATED ALWAYS (data_fim - data_inicio + 1)
@@ -175,7 +147,6 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
     } else {
       const { error } = await supabase.from('ferias').insert({
         funcionario_id: employeeId,
-        periodo_aquisitivo_id: periodoId || null,
         data_inicio: format(startDate, 'yyyy-MM-dd'),
         data_fim: format(endDate, 'yyyy-MM-dd'),
         // SPEC-065: `dias` é GENERATED ALWAYS (data_fim - data_inicio + 1)
@@ -260,38 +231,6 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
                 </Command>
               </PopoverContent>
             </Popover>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Período Aquisitivo Base
-            </Label>
-            <Select
-              value={periodoId}
-              onValueChange={setPeriodoId}
-              disabled={periodosAquisitivos.length === 0 || !!requestToEdit}
-            >
-              <SelectTrigger className="w-full rounded-none border-border">
-                <SelectValue
-                  placeholder={
-                    periodosAquisitivos.length === 0
-                      ? 'Nenhum período registrado'
-                      : 'Selecione o período base'
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent className="rounded-none border-border">
-                {periodosAquisitivos.map((b) => (
-                  <SelectItem key={b.id} value={b.id} className="rounded-none text-xs">
-                    {b.data_inicio
-                      ? format(new Date(`${b.data_inicio}T12:00:00`), 'dd/MM/yyyy')
-                      : ''}{' '}
-                    a {b.data_fim ? format(new Date(`${b.data_fim}T12:00:00`), 'dd/MM/yyyy') : ''}
-                    {typeof b.saldo === 'number' && ` · saldo ${b.saldo} dias`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -388,7 +327,7 @@ export function VacationForm({ open, onOpenChange, onSuccess, requestToEdit }: V
             </Alert>
           )}
 
-          {!periodoId && employeeId && periodosAquisitivos.length === 0 && (
+          {employeeId && globalBalance && !globalBalance.periodo_inicio && (
             <Alert variant="destructive" className="rounded-none border-border mt-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-[10px] uppercase tracking-widest ml-2">
