@@ -2,6 +2,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './main.css'
+import { iniciarRegistroDeTela } from './lib/registro-tela'
 import { recarregarUmaVez } from './components/ErrorBoundary'
 
 // Pedaço de página da versão antiga não existe mais depois de uma publicação nova: recarrega
@@ -10,6 +11,9 @@ window.addEventListener('vite:preloadError', (event) => {
   event.preventDefault()
   recarregarUmaVez()
 })
+
+// SPEC-206: registra as telas abertas (Central › Administração › Movimentação).
+iniciarRegistroDeTela()
 
 // @skip-protected: Do not remove. Required for React rendering.
 createRoot(document.getElementById('root')!).render(<App />)
