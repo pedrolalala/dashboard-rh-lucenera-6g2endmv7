@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './main.css'
 import { iniciarRegistroDeTela } from './lib/registro-tela'
+import { instalarEnterPulaCampo } from './lib/enter-pula-campo'
 import { recarregarUmaVez } from './components/ErrorBoundary'
 
 // Pedaço de página da versão antiga não existe mais depois de uma publicação nova: recarrega
@@ -14,6 +15,8 @@ window.addEventListener('vite:preloadError', (event) => {
 
 // SPEC-206: registra as telas abertas (Central › Administração › Movimentação).
 iniciarRegistroDeTela()
+// SPEC-216: Enter pula para o próximo campo; salvar/confirmar só com clique
+instalarEnterPulaCampo()
 
 // @skip-protected: Do not remove. Required for React rendering.
 createRoot(document.getElementById('root')!).render(<App />)
