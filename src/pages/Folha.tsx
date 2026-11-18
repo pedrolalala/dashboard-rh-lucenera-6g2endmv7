@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, parseISO } from 'date-fns'
-import { Calculator, Loader2 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import FolhaImportar from '@/components/FolhaImportar'
 import {
   Select,
   SelectContent,
@@ -20,7 +19,6 @@ import {
 } from '@/components/ui/table'
 import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
-import { useToast } from '@/hooks/use-toast'
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => ({
   value: String(i + 1),
@@ -37,13 +35,9 @@ export default function FolhaPagamento() {
   const [payrolls, setPayrolls] = useState<any[]>([])
   const [filterMonth, setFilterMonth] = useState(String(new Date().getMonth() + 1))
   const [filterYear, setFilterYear] = useState(String(new Date().getFullYear()))
-  const [genMonth, setGenMonth] = useState(String(new Date().getMonth() + 1))
-  const [genYear, setGenYear] = useState(String(new Date().getFullYear()))
-  const [isGenerating, setIsGenerating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const { user } = useAuth()
-  const { toast } = useToast()
 
   const fetchPayrolls = async () => {
     setIsLoading(true)
@@ -62,137 +56,6 @@ export default function FolhaPagamento() {
     fetchPayrolls()
   }, [filterMonth, filterYear])
 
-  const handleGenerate = async () => {
-    setIsGenerating(true)
-    try {
-      const { data: existing } = await supabase
-        .from('folha_pagamento')
-        .select('id')
-        .eq('mes', Number(genMonth))
-        .eq('ano', Number(genYear))
-        .limit(1)
-
-      if (existing && existing.length > 0) {
-        toast({ title: 'Folha já gerada para este período.', variant: 'destructive' })
-        return
-      }
-
-      const { data: employees } = await supabase
-        .from('funcionarios')
-        .select('id, usuario_id, salario_base, valor_vr, valor_vt, comissao_padrao')
-        .eq('status', 'Ativo')
-
-      if (!employees || employees.length === 0) {
-        toast({ title: 'Nenhum funcionário ativo encontrado.' })
-        return
-      }
-
-      const start = startOfMonth(new Date(Number(genYear), Number(genMonth) - 1))
-      const end = endOfMonth(new Date(Number(genYear), Number(genMonth) - 1))
-
-      const { data: fechados } = await supabase
-        .from('projetos_fechados')
-        .select('cod, valor_fechado')
-        .gte('data_fechamento', format(start, 'yyyy-MM-dd'))
-        .lte('data_fechamento', format(end, 'yyyy-MM-dd'))
-
-      const { data: projetos } = await supabase.from('projetos').select('codigo, responsavel_id')
-
-      const projMap = new Map(projetos?.map((p) => [p.codigo, p.responsavel_id]))
-      const salesPerUser = new Map()
-
-      fechados?.forEach((f) => {
-        const respId = projMap.get(f.cod)
-        if (respId) {
-          salesPerUser.set(respId, (salesPerUser.get(respId) || 0) + Number(f.valor_fechado))
-        }
-      })
-
-      const res = await fetch(`https://brasilapi.com.br/api/feriados/v1/${genYear}`)
-      const feriados = res.ok ? await res.json() : []
-      const feriadosMes = feriados
-        .filter((f: any) => {
-          const d = parseISO(f.date)
-          return d.getMonth() === Number(genMonth) - 1
-        })
-        .map((f: any) => format(parseISO(f.date), 'yyyy-MM-dd'))
-
-      let diasUteis = 0
-      eachDayOfInterval({ start, end }).forEach((d) => {
-        if (!isWeekend(d)) {
-          const formatted = format(d, 'yyyy-MM-dd')
-          if (!feriadosMes.includes(formatted)) diasUteis++
-        }
-      })
-
-      const { data: faltas } = await supabase
-        .from('controle_falta')
-        .select('funcionario_id, status, data')
-        .gte('data', format(start, 'yyyy-MM-dd'))
-        .lte('data', format(end, 'yyyy-MM-dd'))
-
-      const payload = employees.map((emp) => {
-        const empFaltas = faltas?.filter((f) => f.funcionario_id === emp.id) || []
-
-        let faltasInjustificadas = 0
-        let atestados = 0
-        let licenca = 0
-
-        empFaltas.forEach((f) => {
-          if (f.status === 'falta_injustificada' || f.status === 'ausente') faltasInjustificadas++
-          else if (f.status === 'atestado') atestados++
-          else if (f.status === 'licenca_maternidade') licenca++
-        })
-
-        const base = Number(emp.salario_base) || 0
-        const valorVr = Number(emp.valor_vr) || 0
-        const valorVt = Number(emp.valor_vt) || 0
-
-        const descontoFalta = (base / 30) * faltasInjustificadas
-        const descontosInssIr = base * 0.185
-        const descontos = descontoFalta + descontosInssIr
-
-        const diasSemBeneficio = faltasInjustificadas + atestados + licenca
-        const diasVrVt = Math.max(0, diasUteis - diasSemBeneficio)
-        const valor_vr_vt = diasVrVt * (valorVr + valorVt)
-
-        const adicionais = valor_vr_vt || 800 // Fallback to 800 if no vr/vt registered
-        const diasTrabalhados = Math.max(0, diasUteis - faltasInjustificadas - licenca)
-
-        const totalVendas = emp.usuario_id ? salesPerUser.get(emp.usuario_id) || 0 : 0
-        const percentualComissao = Number(emp.comissao_padrao) || 0
-        const valorComissao = totalVendas * (percentualComissao / 100)
-
-        return {
-          funcionario_id: emp.id,
-          mes: Number(genMonth),
-          ano: Number(genYear),
-          salario_base: base,
-          descontos,
-          adicionais,
-          comissao: valorComissao,
-          salario_liquido: base - descontos + adicionais + valorComissao,
-          dias_trabalhados: diasTrabalhados,
-          dias_abonados: atestados,
-          dias_falta: faltasInjustificadas,
-          valor_vr_vt: valor_vr_vt,
-        }
-      })
-
-      const { error } = await supabase.from('folha_pagamento').insert(payload as any)
-      if (error) throw error
-
-      toast({ title: 'Folha de pagamento gerada com sucesso!' })
-      setFilterMonth(genMonth)
-      setFilterYear(genYear)
-      fetchPayrolls()
-    } catch (err: any) {
-      toast({ title: 'Erro ao gerar folha', description: err.message, variant: 'destructive' })
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
   const formatBRL = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
   const canGenerate = user?.app_role === 'admin' || user?.app_role === 'gerente'
@@ -205,62 +68,12 @@ export default function FolhaPagamento() {
             Folha de Pagamento
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Gerencie os holerites e cálculos salariais mensais.
+            Importe a folha exportada pela contabilidade e gere o Contas a Pagar. O sistema não recalcula a folha: a planilha da contabilidade é a fonte.
           </p>
         </div>
       </div>
 
-      {canGenerate && (
-        <Card className="shadow-none border-border">
-          <CardHeader className="bg-transparent border-b border-border pb-4">
-            <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
-              <Calculator className="h-4 w-4" /> Nova Geração de Folha
-            </CardTitle>
-            <CardDescription>
-              Calcule os salários base, descontos e adicionais automaticamente.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-4">
-            <Select value={genMonth} onValueChange={setGenMonth}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Mês" />
-              </SelectTrigger>
-              <SelectContent>
-                {MONTHS.map((m) => (
-                  <SelectItem key={m.value} value={m.value} className="capitalize">
-                    {m.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={genYear} onValueChange={setGenYear}>
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <SelectValue placeholder="Ano" />
-              </SelectTrigger>
-              <SelectContent>
-                {YEARS.map((y) => (
-                  <SelectItem key={y} value={y}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="w-full sm:w-auto uppercase tracking-widest text-xs"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gerando...
-                </>
-              ) : (
-                'Gerar Folha'
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {canGenerate && <FolhaImportar onGerou={fetchPayrolls} />}
 
       <Card className="shadow-none border-border">
         <CardHeader className="pb-3 border-b border-border bg-transparent">
